@@ -1,0 +1,1267 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Asset Register</title>
+<style>
+:root{
+  --bg:#E9ECF1; --tile:#FFFFFF; --ink:#222A33; --muted:#6E7885; --line:#D5DBE3; --line2:#C3CBD6;
+  --silver1:#FDFDFE; --silver2:#E6EAF0; --silver3:#D9DFE7;
+  --blue:#2E6FD9; --blue2:#1F5AB8; --blue-lite:#E8F0FD; --blue-line:#B9D0F2;
+  --green:#2F8F63; --red:#C0453C; --amber:#B5821F;
+  --mono:ui-monospace,SFMono-Regular,Menlo,Consolas,monospace;
+  --sans:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Helvetica,Arial,sans-serif;
+  --r:12px;
+  --lift:0 1px 0 rgba(255,255,255,.9) inset, 0 1px 2px rgba(28,40,58,.10), 0 4px 10px rgba(28,40,58,.05);
+  --press:0 1px 2px rgba(28,40,58,.14) inset;
+}
+*{box-sizing:border-box}
+html,body{margin:0;padding:0}
+body{background:var(--bg);color:var(--ink);font-family:var(--sans);font-size:14px;line-height:1.45;-webkit-text-size-adjust:100%}
+h1,h2,h3{margin:0;font-weight:650;letter-spacing:-.01em}
+button,input,select,textarea{font-family:inherit;font-size:14px;color:inherit}
+
+/* ---- header ---- */
+header{background:linear-gradient(180deg,#F6F8FB,#DFE4EC);border-bottom:1px solid var(--line2);
+  padding:10px 16px;display:flex;align-items:center;gap:12px;flex-wrap:wrap;position:sticky;top:0;z-index:40;
+  box-shadow:0 1px 0 rgba(255,255,255,.8) inset,0 2px 8px rgba(28,40,58,.06)}
+.brand{font-weight:750;letter-spacing:.06em;font-size:14px;color:#2C3742}
+.brand b{color:var(--blue)}
+.ver{font-family:var(--mono);font-size:11px;color:var(--muted)}
+.spacer{flex:1}
+.chip{font-family:var(--mono);font-size:11px;font-weight:600;padding:4px 10px;border-radius:999px;
+  background:linear-gradient(180deg,var(--silver1),var(--silver2));border:1px solid var(--line2);box-shadow:var(--lift)}
+.chip.live{background:linear-gradient(180deg,#EAF4EE,#CFE7DA);border-color:#A9CFBB;color:#1F6644}
+.chip.local{background:linear-gradient(180deg,#FFF6E2,#F6E5BE);border-color:#E2C889;color:#7A5610}
+
+/* ---- chiclet tab tray ---- */
+nav.tray{position:sticky;top:53px;z-index:39;background:var(--bg);padding:10px 16px 6px}
+nav.tray .inner{display:inline-flex;gap:6px;padding:5px;border-radius:16px;background:linear-gradient(180deg,#DDE2EA,#EDF0F5);
+  box-shadow:var(--press);border:1px solid var(--line2);max-width:100%;overflow:auto}
+nav.tray button{border:1px solid var(--line2);border-radius:10px;padding:7px 16px;cursor:pointer;font-weight:600;white-space:nowrap;
+  background:linear-gradient(180deg,var(--silver1),var(--silver2));box-shadow:var(--lift);color:#404A55}
+nav.tray button:hover{background:linear-gradient(180deg,#fff,#EEF1F6)}
+nav.tray button:active{box-shadow:var(--press);transform:translateY(1px)}
+nav.tray button.on{background:linear-gradient(180deg,#5C90E4,var(--blue));border-color:var(--blue2);color:#fff;
+  box-shadow:0 1px 0 rgba(255,255,255,.35) inset,0 2px 6px rgba(46,111,217,.35)}
+
+main{padding:6px 16px 40px;max-width:1400px;margin:0 auto}
+
+/* ---- tiles ---- */
+.tile{background:var(--tile);border:1px solid var(--line);border-radius:var(--r);box-shadow:var(--lift);margin-bottom:14px;overflow:hidden}
+.tile>.th{padding:11px 15px;background:linear-gradient(180deg,#FBFCFD,#EFF2F6);border-bottom:1px solid var(--line);
+  display:flex;align-items:center;gap:10px;flex-wrap:wrap}
+.tile>.th h2{font-size:11.5px;text-transform:uppercase;letter-spacing:.09em;color:var(--muted)}
+.tile>.tb{padding:14px}
+.tile>.tb.flush{padding:0}
+
+.kpis{display:grid;grid-template-columns:repeat(auto-fit,minmax(158px,1fr));gap:10px;margin:10px 0 14px}
+.kpi{background:linear-gradient(180deg,#FFFFFF,#F1F4F8);border:1px solid var(--line);border-radius:var(--r);padding:12px 14px;box-shadow:var(--lift)}
+.kpi .lbl{font-size:10.5px;text-transform:uppercase;letter-spacing:.08em;color:var(--muted);font-weight:700}
+.kpi .val{font-family:var(--mono);font-size:23px;font-weight:600;margin-top:5px;letter-spacing:-.03em}
+.kpi .sub{font-size:11px;color:var(--muted);margin-top:2px}
+.kpi.hi{background:linear-gradient(180deg,#F4F8FF,var(--blue-lite));border-color:var(--blue-line)}
+.kpi.hi .val{color:var(--blue2)}
+
+.banner{background:linear-gradient(180deg,#FFFBF0,#FBEFD6);border:1px solid #E7CF9C;border-radius:var(--r);
+  padding:11px 14px;margin-bottom:14px;font-size:13px;box-shadow:var(--lift)}
+.banner code{font-family:var(--mono);font-size:12px;background:#00000010;padding:1px 5px;border-radius:4px}
+
+/* ---- tables ---- */
+table{width:100%;border-collapse:collapse}
+th{text-align:left;font-size:10.5px;text-transform:uppercase;letter-spacing:.07em;color:var(--muted);font-weight:700;
+  padding:9px 11px;background:linear-gradient(180deg,#F8FAFC,#EDF0F5);border-bottom:1px solid var(--line);white-space:nowrap;cursor:pointer;user-select:none}
+th.nosort{cursor:default}
+th:hover:not(.nosort){color:var(--blue2)}
+td{padding:9px 11px;border-bottom:1px solid #EFF2F5;vertical-align:top}
+tbody tr:hover{background:var(--blue-lite)}
+tbody tr.clickable{cursor:pointer}
+tfoot td{background:linear-gradient(180deg,#F8FAFC,#EDF0F5);font-weight:650;border-bottom:0}
+.num{font-family:var(--mono);text-align:right;white-space:nowrap}
+.mono{font-family:var(--mono);font-size:12.5px}
+.empty{padding:34px 14px;text-align:center;color:var(--muted)}
+.pos{color:var(--green)} .neg{color:var(--red)}
+
+/* ---- status chiclets ---- */
+.pill{display:inline-block;font-size:11px;font-weight:700;padding:3px 10px;border-radius:999px;white-space:nowrap;
+  border:1px solid var(--line2);background:linear-gradient(180deg,var(--silver1),var(--silver2));box-shadow:0 1px 0 rgba(255,255,255,.8) inset}
+.s-Active{background:linear-gradient(180deg,#EAF4EE,#D2E7DC);border-color:#A9CFBB;color:#206043}
+.s-Idle{background:linear-gradient(180deg,#F7F9FB,#E6EAF0);border-color:var(--line2);color:#4E5761}
+.s-Repair{background:linear-gradient(180deg,#FFF7E7,#F4E6C6);border-color:#E0C68C;color:#7B5711}
+.s-Sold{background:linear-gradient(180deg,#EFF4FE,#DAE6FA);border-color:var(--blue-line);color:#23539E}
+.s-Disposed{background:linear-gradient(180deg,#FCEEEC,#F2D9D6);border-color:#E0B6B1;color:#8A342C}
+
+/* ---- controls ---- */
+.btn{border:1px solid var(--blue2);border-radius:10px;padding:7px 15px;font-weight:650;cursor:pointer;
+  background:linear-gradient(180deg,#5C90E4,var(--blue));color:#fff;
+  box-shadow:0 1px 0 rgba(255,255,255,.3) inset,0 1px 3px rgba(46,111,217,.3)}
+.btn:hover{background:linear-gradient(180deg,#6699E8,#3376DE)}
+.btn:active{box-shadow:var(--press);transform:translateY(1px)}
+.btn.ghost{background:linear-gradient(180deg,var(--silver1),var(--silver2));border-color:var(--line2);color:#3D4854;box-shadow:var(--lift)}
+.btn.ghost:hover{background:linear-gradient(180deg,#fff,#EDF1F6)}
+.btn.danger{background:linear-gradient(180deg,#D06158,#B93F36);border-color:#9E362E}
+.btn.sm{padding:4px 11px;font-size:12.5px;border-radius:8px}
+.btn:disabled{opacity:.5;cursor:not-allowed}
+input[type=text],input[type=number],input[type=date],select,textarea{width:100%;padding:7px 9px;border:1px solid var(--line2);
+  border-radius:9px;background:linear-gradient(180deg,#FBFCFD,#fff);box-shadow:0 1px 1px rgba(28,40,58,.05) inset}
+input:focus,select:focus,textarea:focus{outline:0;border-color:var(--blue);box-shadow:0 0 0 3px rgba(46,111,217,.16)}
+label.f{display:block;margin-bottom:11px}
+label.f>span{display:block;font-size:10.5px;text-transform:uppercase;letter-spacing:.07em;color:var(--muted);font-weight:700;margin-bottom:4px}
+.grid2{display:grid;grid-template-columns:1fr 1fr;gap:0 12px}
+.grid3{display:grid;grid-template-columns:1fr 1fr 1fr;gap:0 12px}
+.filters{display:flex;gap:8px;flex-wrap:wrap;align-items:center}
+.filters input[type=text]{width:220px}
+.filters select{width:auto;min-width:118px}
+fieldset.fs{border:1px solid var(--line);border-radius:var(--r);padding:13px 14px 3px;margin:0 0 14px;
+  background:linear-gradient(180deg,#FCFDFE,#F6F8FB)}
+fieldset.fs>legend{font-size:10.5px;text-transform:uppercase;letter-spacing:.08em;color:var(--muted);font-weight:800;padding:0 7px}
+/* asset cards (narrow screens) */
+.acards{display:none;padding:10px;gap:9px;grid-template-columns:1fr}
+.acard{background:linear-gradient(180deg,#FFFFFF,#F4F6FA);border:1px solid var(--line);border-radius:var(--r);
+  padding:11px 13px;box-shadow:var(--lift);cursor:pointer}
+.acard:active{box-shadow:var(--press);transform:translateY(1px)}
+.ac-top{display:flex;align-items:center;justify-content:space-between;gap:8px;margin-bottom:5px}
+.ac-unit{font-family:var(--mono);font-size:15px;font-weight:750;letter-spacing:.03em;color:#1B4A94;
+  background:linear-gradient(180deg,#F3F8FF,#DEEAFB);border:1px solid var(--blue-line);border-radius:8px;padding:2px 9px}
+.ac-unit.none{color:var(--muted);background:linear-gradient(180deg,#F8F9FB,#EBEEF2);border-color:var(--line2);font-weight:600;font-size:12px}
+.ac-name{font-weight:700;font-size:15px;line-height:1.25}
+.ac-sub{font-size:12.5px;color:var(--muted);margin-top:1px}
+.ac-tags{display:flex;flex-wrap:wrap;gap:5px;margin-top:7px}
+.ac-tags span{font-size:11.5px;font-weight:600;color:#4A5561;background:linear-gradient(180deg,#FBFCFD,#E9EDF2);
+  border:1px solid var(--line2);border-radius:999px;padding:2px 9px}
+.btn.warn{background:linear-gradient(180deg,#E0A63F,#C9861F);border-color:#A96F13}
+.btn.warn:hover{background:linear-gradient(180deg,#E6B052,#D4901F)}
+.acard{position:relative}
+.acard.gone{background:linear-gradient(180deg,#FBFAFD,#EEECF3);border-color:#D5CFE2}
+.acard.gone .ac-name{color:#5A5566}
+.acard.gone .ac-unit{color:#4C3572;background:linear-gradient(180deg,#F4F1FA,#E3DBF2);border-color:#D0C4E6}
+.ac-ribbon{position:absolute;top:10px;right:0;font-size:9.5px;font-weight:800;letter-spacing:.14em;color:#fff;
+  background:linear-gradient(180deg,#7B62A8,#5D4589);padding:3px 10px 3px 12px;border-radius:8px 0 0 8px;
+  box-shadow:0 1px 3px rgba(46,32,74,.3)}
+.acard.gone .ac-top .pill{visibility:hidden}
+fieldset.fs.flash{animation:flashfs 1.4s ease}
+@keyframes flashfs{0%,100%{background:linear-gradient(180deg,#FCFDFE,#F6F8FB);border-color:var(--line)}
+  25%{background:linear-gradient(180deg,#FFF8E9,#FBEFD6);border-color:#E7CF9C}}
+@media(prefers-reduced-motion:reduce){fieldset.fs.flash{animation:none;border-color:#E7CF9C}}
+
+.ac-specs{display:grid;grid-template-columns:1fr 1fr;gap:7px 12px;margin-top:9px;padding-top:9px;border-top:1px solid var(--line)}
+.ac-specs .sp{min-width:0}
+.ac-specs .sp.wide{grid-column:1/-1}
+.ac-specs .spl{display:block;font-size:9.5px;text-transform:uppercase;letter-spacing:.08em;color:var(--muted);font-weight:700}
+.ac-specs .spv{display:block;font-size:12.5px;line-height:1.35;word-break:break-word}
+.ac-specs .spv .mono{font-size:12px}
+.ac-specs em{font-style:normal;font-weight:700;font-size:11px}
+.ac-specs .warn{color:var(--amber)}
+.ac-foot{display:flex;align-items:baseline;gap:16px;margin-top:9px;padding-top:8px;border-top:1px solid var(--line)}
+.ac-money{font-size:14px;font-weight:650;display:flex;flex-direction:column}
+.ac-lbl{font-family:var(--sans);font-size:9.5px;text-transform:uppercase;letter-spacing:.08em;color:var(--muted);font-weight:700}
+.ac-title{font-size:11.5px;color:var(--muted);text-align:right}
+.ac-total{display:flex;justify-content:space-between;padding:8px 3px 2px;font-weight:650;font-size:13px;color:#3D4854}
+@media(max-width:760px){
+  .acards{display:grid}
+  table.atable{display:none}
+}
+
+/* appendix */
+.apx-group{margin-bottom:20px}
+.apx-head{display:flex;align-items:baseline;justify-content:space-between;gap:10px;padding:0 0 6px;border-bottom:2px solid var(--line2);margin-bottom:2px}
+.apx-head h3{font-size:13px;text-transform:uppercase;letter-spacing:.09em}
+.apx-head span{font-size:11.5px;color:var(--muted)}
+table.apx{font-size:12px}
+table.apx th{padding:6px 7px;font-size:9.5px;background:none;border-bottom:1px solid var(--line)}
+table.apx td{padding:5px 7px;border-bottom:1px solid #F1F3F6}
+table.apx td.b{font-weight:650}
+table.apx td.sm{font-size:11px;color:#55606C}
+.apx-note{font-size:10.5px;color:var(--muted)}
+#apxBody{overflow-x:auto}
+@media print{
+  header,nav.tray,.banner,.btn,.tile>.th .hint{display:none!important}
+  body{background:#fff;font-size:10px}
+  main{padding:0;max-width:none}
+  .tile{border:0;box-shadow:none;margin:0}
+  .tile>.tb{padding:0}
+  .apx-group{page-break-inside:auto;margin-bottom:14px}
+  table.apx{font-size:9px}
+  table.apx tr{page-break-inside:avoid}
+  .apx-head h3{font-size:11px}
+}
+
+.catfilter{flex-basis:100%;display:grid;grid-template-columns:repeat(auto-fit,minmax(84px,1fr));gap:6px;padding:2px 0 4px}
+.cat.sm{font-size:12.5px;padding:7px 6px;border-radius:9px;text-align:center;width:100%}
+.catgroup{display:flex;align-items:flex-start;gap:10px;margin-bottom:7px}
+.catlbl{flex:0 0 74px;font-size:10px;text-transform:uppercase;letter-spacing:.07em;color:var(--muted);font-weight:700;padding-top:7px;text-align:right}
+.cats{display:flex;gap:6px;flex-wrap:wrap;flex:1}
+.cat{font-size:12.5px;font-weight:600;padding:5px 12px;border-radius:9px;cursor:pointer;color:#414B57;
+  background:linear-gradient(180deg,var(--silver1),var(--silver2));border:1px solid var(--line2);box-shadow:var(--lift)}
+.cat:hover{background:linear-gradient(180deg,#fff,#EDF1F6);border-color:#AEBCCB}
+.cat:active{box-shadow:var(--press);transform:translateY(1px)}
+.cat.on{background:linear-gradient(180deg,#5C90E4,var(--blue));border-color:var(--blue2);color:#fff;
+  box-shadow:0 1px 0 rgba(255,255,255,.35) inset,0 2px 6px rgba(46,111,217,.35)}
+@media(max-width:520px){
+  .catgroup{display:block}
+  .catlbl{text-align:left;padding:0 0 3px}
+}
+.hint{font-size:12px;color:var(--muted)}
+.f>.flbl{display:block;font-size:10.5px;text-transform:uppercase;letter-spacing:.07em;color:var(--muted);font-weight:700;margin-bottom:4px}
+.f{margin-bottom:11px}
+.unitrow{display:flex;gap:0;align-items:stretch;flex-wrap:wrap}
+.unitrow .btn{margin-left:8px;align-self:center}
+.unitplate{font-size:19px;font-weight:750;letter-spacing:.03em;padding:6px 14px;border-radius:10px;
+  background:linear-gradient(180deg,#F3F8FF,#D9E7FA);border:1px solid var(--blue-line);color:#1B4A94;
+  box-shadow:0 1px 0 rgba(255,255,255,.9) inset,0 1px 2px rgba(28,40,58,.08)}
+.prefixchip{font-family:var(--mono);font-weight:750;font-size:16px;padding:7px 0;width:44px;text-align:center;
+  border-radius:9px 0 0 9px;background:linear-gradient(180deg,#EEF1F6,#DBE1E9);border:1px solid var(--line2);border-right:0;color:#414B57}
+#uNum{border-radius:0 9px 9px 0;max-width:112px;font-family:var(--mono);font-size:16px;font-weight:650}
+.openchips{display:flex;gap:6px;flex-wrap:wrap;margin-top:8px}
+.openchips .oc{font-family:var(--mono);font-size:12px;font-weight:650;padding:4px 10px;border-radius:999px;cursor:pointer;
+  background:linear-gradient(180deg,#FDFDFE,#E6EAF0);border:1px solid var(--line2);color:#414B57;box-shadow:var(--lift)}
+.openchips .oc:hover{background:linear-gradient(180deg,#F4F8FF,#DCE8FA);border-color:var(--blue-line);color:#1B4A94}
+.openchips .oc.on{background:linear-gradient(180deg,#5C90E4,var(--blue));border-color:var(--blue2);color:#fff}
+.openchips .oc:active{box-shadow:var(--press);transform:translateY(1px)}
+
+/* ---- slide-over ---- */
+.scrim{position:fixed;inset:0;background:rgba(26,36,48,.42);z-index:50;display:none}
+.scrim.on{display:block}
+.sheet{position:fixed;top:0;right:0;bottom:0;width:min(620px,100%);background:var(--bg);z-index:51;
+  transform:translateX(100%);transition:transform .18s ease;display:flex;flex-direction:column;box-shadow:-8px 0 24px rgba(20,30,44,.18)}
+.sheet.on{transform:none}
+.sheet .sh{padding:12px 16px;background:linear-gradient(180deg,#F6F8FB,#E4E9F0);border-bottom:1px solid var(--line2);display:flex;align-items:center;gap:10px}
+.sheet .sh h2{font-size:15px;flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.sheet .sh .navpos{font-family:var(--mono);font-size:11px;color:var(--muted);white-space:nowrap}
+.sheet .sh #navPrev,.sheet .sh #navNext{padding:3px 11px;font-size:15px;line-height:1.1}
+.sheet .sb{padding:14px 16px;overflow:auto;flex:1}
+.sheet .sf{padding:11px 16px;background:linear-gradient(180deg,#F6F8FB,#E4E9F0);border-top:1px solid var(--line2);display:flex;gap:8px;flex-wrap:wrap;align-items:center}
+.x{background:transparent;border:0;font-size:22px;line-height:1;cursor:pointer;color:var(--muted);padding:0 6px;border-radius:8px}
+.x:hover{background:#00000010}
+
+#toast{position:fixed;bottom:20px;left:50%;transform:translateX(-50%);background:#2B3541;color:#fff;padding:10px 18px;
+  border-radius:999px;font-size:13px;z-index:80;opacity:0;pointer-events:none;transition:opacity .2s;box-shadow:0 4px 14px rgba(20,30,44,.3)}
+#toast.on{opacity:1}
+#toast.err{background:var(--red)}
+
+@media(max-width:760px){
+  main{padding:6px 10px 34px}
+  nav.tray{padding:8px 10px 4px}
+  .grid2,.grid3{grid-template-columns:1fr}
+  table.responsive thead{display:none}
+  table.responsive tr{display:block;border-bottom:1px solid var(--line);padding:8px 4px}
+  table.responsive tbody tr:hover{background:transparent}
+  table.responsive td{display:flex;justify-content:space-between;gap:12px;border:0;padding:3px 8px}
+  table.responsive td:before{content:attr(data-l);font-size:10.5px;text-transform:uppercase;letter-spacing:.07em;color:var(--muted);font-weight:700}
+  table.responsive tfoot td{background:transparent}
+}
+@media(prefers-reduced-motion:reduce){*{transition:none!important}}
+</style>
+</head>
+<body>
+
+<header>
+  <span class="brand">ASSET <b>REGISTER</b></span>
+  <span class="ver" id="verTag">v1.22</span>
+  <span class="spacer"></span>
+  <span class="chip" id="conn">…</span>
+</header>
+
+<nav class="tray"><div class="inner" id="tabs">
+  <button data-v="dash" class="on">Dashboard</button>
+  <button data-v="assets">Assets</button>
+  <button data-v="list">Appendix</button>
+  <button data-v="data">Import / Export</button>
+</div></nav>
+
+<main id="view"></main>
+
+<div class="scrim" id="scrim"></div>
+<aside class="sheet" id="sheet">
+  <div class="sh">
+    <h2 id="sheetTitle">Asset</h2>
+    <span class="navpos" id="navPos"></span>
+    <button class="btn ghost sm" id="navPrev" title="Previous asset">&#8249;</button>
+    <button class="btn ghost sm" id="navNext" title="Next asset">&#8250;</button>
+    <button class="x" id="sheetX">&times;</button>
+  </div>
+  <div class="sb" id="sheetBody"></div>
+  <div class="sf" id="sheetFoot"></div>
+</aside>
+
+<div id="toast"></div>
+
+<script>
+/* ============================================================
+   ASSET REGISTER — V1.01
+   Single-file vanilla HTML/JS. Supabase REST backend.
+   Paste project URL + anon key into BAKED_CONFIG below.
+   ============================================================ */
+const BAKED_CONFIG = {
+  SUPABASE_URL: "https://inhwadbibwkakacdvoxu.supabase.co",   // AR Collections project
+  SUPABASE_ANON_KEY: "sb_publishable_mvtNl3RxZB_V8xSserWVZA_8givexBq",
+  APP_VERSION: "1.22",
+  // Unit # convention. Prefix per branch, separator, zero-padding width.
+  // Fargo 107 -> "F-107". Set UNIT_PAD to 3 for "F-107", 0 for no padding.
+  UNIT_PREFIX: { "Fargo":"F", "Bismarck":"B", "Grand Forks":"GF" },
+  UNIT_SEP: "-",
+  UNIT_PAD: 0
+};
+
+const STATUSES   = ["Active","Idle","Repair","Sold","Disposed"];
+const HELD       = ["Active","Idle","Repair"];
+const LOCATIONS  = ["Fargo","Bismarck","Grand Forks"];
+const CATEGORIES = ["Truck","Car","Semi","Trailer","Van","SUV","Forklift"];
+const ENTITIES   = ["SMI","SFAB"];
+const FUNDING    = ["Cash","Loan","Lease","Trade-In","Contributed"];
+const TITLE_STATUSES = ["In Hand","Missing","With lender","Applied for","No title"];
+
+const LIVE = !!(BAKED_CONFIG.SUPABASE_URL && BAKED_CONFIG.SUPABASE_ANON_KEY);
+
+const state = {
+  view:"dash",
+  assets:[],
+  f:{q:"",entity:"",cat:"",status:"",loc:"",nounit:false},
+  sort:{k:"unit_no",dir:1},
+  sel:null,
+  imp:null
+};
+
+/* ---------- utils ---------- */
+const $ = s=>document.querySelector(s);
+const esc = s => (s==null?"":String(s)).replace(/[&<>"']/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]));
+const uid = ()=> (crypto.randomUUID? crypto.randomUUID() : "id"+Math.random().toString(36).slice(2)+Date.now());
+const money = n => (n==null||n===""||isNaN(n)) ? "—" : "$"+Number(n).toLocaleString("en-US",{maximumFractionDigits:0});
+const signed = n => (n==null||isNaN(n)) ? "—" : (n<0?"-":"")+"$"+Math.abs(Number(n)).toLocaleString("en-US",{maximumFractionDigits:0});
+const dt = d => !d ? "—" : String(d).slice(0,10);
+const today = ()=> new Date().toISOString().slice(0,10);
+const num = v => (v===""||v==null)?null:(isNaN(Number(v))?null:Number(v));
+function daysUntil(d){ if(!d) return null; return Math.round((new Date(d+"T00:00:00")-new Date(today()+"T00:00:00"))/86400000); }
+function toast(msg,err){ const t=$("#toast"); t.textContent=msg; t.className="on"+(err?" err":""); setTimeout(()=>t.className="",2600); }
+function opts(list,cur,blank){ return (blank?`<option value="">${esc(blank)}</option>`:"")+list.map(o=>`<option${o===cur?" selected":""}>${esc(o)}</option>`).join(""); }
+const gainOf = a => (a.sale_price!=null && a.purchase_price!=null) ? Number(a.sale_price)-Number(a.purchase_price) : null;
+
+/* ---------- unit # helpers ---------- */
+// Accepts "F-107", "F107", "SMI 107", "107". Returns {pre, n} or null.
+function parseUnit(u){
+  const s=String(u||"").trim();
+  if(!s) return null;
+  const m=s.match(/^(.*?)[\s\-_]*(\d+)\s*$/);
+  if(!m) return {pre:s.toUpperCase(),n:null};
+  return {pre:m[1].toUpperCase().replace(/[\s\-_]+$/,""), n:parseInt(m[2],10)};
+}
+function prefixFor(branch){ return BAKED_CONFIG.UNIT_PREFIX[branch] || ""; }
+function fmtUnit(pre,n){
+  const pad=BAKED_CONFIG.UNIT_PAD||0;
+  const num=pad? String(n).padStart(pad,"0") : String(n);
+  return pre ? pre+BAKED_CONFIG.UNIT_SEP+num : num;
+}
+// Step the unit number up or down within a branch's series, skipping numbers
+// already in use. dir = +1 (Next) or -1 (Prev). Series floor is 101.
+const UNIT_FLOOR = 101;
+function takenNums(pre,exceptId){
+  const set=new Set();
+  state.assets.forEach(a=>{
+    if(a.id===exceptId) return;
+    const p=parseUnit(a.unit_no);
+    if(p && p.n!=null && p.pre===pre.toUpperCase()) set.add(p.n);
+  });
+  return set;
+}
+function stepUnit(branch,current,dir,exceptId){
+  const pre=prefixFor(branch);
+  if(!pre) return null;
+  const taken=takenNums(pre,exceptId);
+  const cur=parseUnit(current);
+  let n;
+  if(cur && cur.n!=null && (!cur.pre || cur.pre===pre.toUpperCase())){
+    n=cur.n+dir;                      // step from what's in the field
+  } else if(dir>0){
+    n=(taken.size? Math.max(...taken) : UNIT_FLOOR-1)+1;   // highest + 1
+  } else {
+    n=UNIT_FLOOR;                     // lowest open in the series
+    while(taken.has(n)) n++;
+    return fmtUnit(pre,n);
+  }
+  while(taken.has(n)) n+=dir;
+  if(n<UNIT_FLOOR) return null;
+  return fmtUnit(pre,n);
+}
+function nextUnit(branch,exceptId){ return stepUnit(branch,"",1,exceptId)||""; }
+function unitTaken(u,exceptId){
+  const k=String(u||"").trim().toUpperCase();
+  if(!k) return null;
+  return state.assets.find(a=>a.id!==exceptId && String(a.unit_no||"").trim().toUpperCase()===k)||null;
+}
+// Sort: assigned units first, grouped by prefix, numeric within prefix. Blanks last.
+function unitSortKey(u){
+  const p=parseUnit(u);
+  if(!p) return "\uffff";
+  return p.pre+"|"+(p.n==null? "\uffff" : String(p.n).padStart(8,"0"));
+}
+
+/* ---------- data layer ---------- */
+async function sb(path, opt={}){
+  const r = await fetch(BAKED_CONFIG.SUPABASE_URL+"/rest/v1/"+path, {
+    method: opt.method||"GET",
+    headers:{
+      apikey: BAKED_CONFIG.SUPABASE_ANON_KEY,
+      Authorization:"Bearer "+BAKED_CONFIG.SUPABASE_ANON_KEY,
+      "Content-Type":"application/json",
+      Prefer: opt.prefer||"return=representation"
+    },
+    body: opt.body? JSON.stringify(opt.body): undefined
+  });
+  if(!r.ok) throw new Error((await r.text()).slice(0,300));
+  return r.status===204 ? null : r.json();
+}
+const DB = {
+  async load(){
+    if(LIVE) state.assets = await sb("assets?select=*&order=unit_no.asc");
+    else if(!state.assets.length) seed();
+  },
+  async save(a){
+    a.updated_at=new Date().toISOString();
+    if(LIVE){
+      if(a.id){ const [x]=await sb("assets?id=eq."+a.id,{method:"PATCH",body:strip(a)}); return x; }
+      const [x]=await sb("assets",{method:"POST",body:strip(a)}); return x;
+    }
+    if(a.id){ const i=state.assets.findIndex(x=>x.id===a.id); state.assets[i]=a; return a; }
+    a.id=uid(); state.assets.push(a); return a;
+  },
+  async del(id){
+    if(LIVE) await sb("assets?id=eq."+id,{method:"DELETE",prefer:"return=minimal"});
+    state.assets=state.assets.filter(a=>a.id!==id);
+  },
+  async bulk(rows){
+    if(LIVE){ const out=await sb("assets",{method:"POST",body:rows}); state.assets=state.assets.concat(out); return out.length; }
+    rows.forEach(r=>{ r.id=uid(); state.assets.push(r); }); return rows.length;
+  }
+};
+function strip(o){ const c=Object.assign({},o); delete c.id; delete c.created_at; return c; }
+
+function seed(){
+  // v1.21: reconciled to updated SMI+SFAB carrier lists 8/24/26. 92 vehicles.
+  state.assets=[
+    {id:uid(),unit_no:"B-112",name:"PUP FOR BOOMTRUCK",category:"",make:"WARD-R",model:"FLATBED",year:1969,vin:"3X5229",serial:"",plate:"T2485",entity:"SMI",location:"Bismarck",status:"Active",assigned_to:"",purchase_date:"2003-06-11",purchase_price:null,sale_price:null,vendor:"",funding:"Cash",lender:"",loan_payoff:null,reg_expires:null,insured:true,title_status:"In Hand",title_note:"",state:"ND",title_number:"5247917",gvw:null,on_dep_schedule:false,dep_location:"",origin:"Physical Title",notes:"",doc_url:""},
+    {id:uid(),unit_no:"",name:"BOOM TRUCK",category:"",make:"INTL",model:"GL PYS",year:1981,vin:"1HTD31571MGM16697",serial:"",plate:"YBE9549",entity:"SMI",location:"Fargo",status:"Active",assigned_to:"",purchase_date:"2012-05-14",purchase_price:null,sale_price:null,vendor:"",funding:"Cash",lender:"",loan_payoff:null,reg_expires:null,insured:false,title_status:"In Hand",title_note:"",state:"MN",title_number:"K1350Q831",gvw:63000,on_dep_schedule:true,dep_location:"Line 6",origin:"Physical Title",notes:"Ex-Fergus Falls branch (closed)",doc_url:""},
+    {id:uid(),unit_no:"F-101",name:"1ST DEL TRUCK W-AT",category:"",make:"GMC",model:"C-SERIES C7H042",year:1997,vin:"1GDJ7H1P0VJ850721",serial:"",plate:"917-AWB",entity:"SMI",location:"Fargo",status:"Active",assigned_to:"",purchase_date:"2003-08-25",purchase_price:null,sale_price:null,vendor:"",funding:"Cash",lender:"",loan_payoff:null,reg_expires:null,insured:true,title_status:"In Hand",title_note:"",state:"ND",title_number:"5269149",gvw:26000,on_dep_schedule:true,dep_location:"Line 2",origin:"Physical Title",notes:"",doc_url:""},
+    {id:uid(),unit_no:"F-202",name:"45' WHITE VAN",category:"",make:"WABA",model:"NA (SEMI)",year:1998,vin:"1JJV482U4WL419007",serial:"",plate:"T2488",entity:"SMI",location:"Fargo",status:"Active",assigned_to:"",purchase_date:"2009-12-22",purchase_price:null,sale_price:null,vendor:"",funding:"Cash",lender:"",loan_payoff:null,reg_expires:null,insured:false,title_status:"In Hand",title_note:"",state:"ND",title_number:"5894073",gvw:40000,on_dep_schedule:true,dep_location:"Line 3",origin:"Physical Title",notes:"NOT ON DEPR, SELL(?), SMI DOES HAVE THIS 11/20/18 · Ex-Fergus Falls branch (closed)",doc_url:""},
+    {id:uid(),unit_no:"B-111",name:"48' DROP DECK",category:"",make:"WILX",model:"CFD900",year:1998,vin:"1W1FGB7B7WF309839",serial:"",plate:"T181524",entity:"SMI",location:"Bismarck",status:"Active",assigned_to:"",purchase_date:"2012-08-16",purchase_price:null,sale_price:null,vendor:"",funding:"Cash",lender:"",loan_payoff:null,reg_expires:null,insured:false,title_status:"In Hand",title_note:"",state:"ND",title_number:"3868727",gvw:null,on_dep_schedule:true,dep_location:"Line 40",origin:"Physical Title",notes:"",doc_url:""},
+    {id:uid(),unit_no:"GF-602",name:"GF PUP",category:"",make:"JCRAFT",model:"JCPTST",year:1999,vin:"1J9PB1525XK222005",serial:"",plate:"T432565",entity:"SMI",location:"Grand Forks",status:"Active",assigned_to:"",purchase_date:"2019-04-22",purchase_price:null,sale_price:null,vendor:"",funding:"Cash",lender:"",loan_payoff:null,reg_expires:null,insured:true,title_status:"In Hand",title_note:"",state:"ND",title_number:"ND1279211520",gvw:null,on_dep_schedule:false,dep_location:"",origin:"Physical Title",notes:"",doc_url:""},
+    {id:uid(),unit_no:"F-109",name:"BOOM TRUCK",category:"",make:"STRG NEW",model:"LT9513",year:1999,vin:"2FZXKWYB3XAA38182",serial:"",plate:"797-AHG",entity:"SMI",location:"Bismarck",status:"Active",assigned_to:"",purchase_date:"2013-01-16",purchase_price:null,sale_price:null,vendor:"",funding:"Cash",lender:"",loan_payoff:null,reg_expires:null,insured:true,title_status:"In Hand",title_note:"",state:"ND",title_number:"6675488",gvw:66000,on_dep_schedule:true,dep_location:"Line 39",origin:"Physical Title",notes:"",doc_url:""},
+    {id:uid(),unit_no:"",name:"GMC C-SERIES C7H042",category:"",make:"GMC",model:"C-SERIES C7H042",year:2000,vin:"1GDJ7H1D8YJ904633",serial:"",plate:"",entity:"SMI",location:"Fargo",status:"Active",assigned_to:"",purchase_date:"2004-12-16",purchase_price:null,sale_price:null,vendor:"",funding:"Cash",lender:"",loan_payoff:null,reg_expires:null,insured:true,title_status:"In Hand",title_note:"",state:"ND",title_number:"5403022",gvw:null,on_dep_schedule:true,dep_location:"Line 38",origin:"Physical Title",notes:"",doc_url:""},
+    {id:uid(),unit_no:"F-103",name:"SEMI WHITE  2000",category:"",make:"VOLVO",model:"VNM",year:2000,vin:"4V4MD2UF2YN789299",serial:"",plate:"22520P",entity:"SMI",location:"Fargo",status:"Active",assigned_to:"",purchase_date:"2012-07-26",purchase_price:null,sale_price:null,vendor:"",funding:"Cash",lender:"",loan_payoff:null,reg_expires:null,insured:true,title_status:"In Hand",title_note:"",state:"ND",title_number:"6707746",gvw:80000,on_dep_schedule:true,dep_location:"Line 8",origin:"Physical Title",notes:"",doc_url:""},
+    {id:uid(),unit_no:"F-208",name:"53' WHITE DRY VAN",category:"",make:"TRAILM",model:"DRY VAN",year:2000,vin:"1PT01JAH8Y9017336",serial:"",plate:"T181523",entity:"SMI",location:"Fargo",status:"Active",assigned_to:"",purchase_date:"2014-10-07",purchase_price:null,sale_price:null,vendor:"",funding:"Cash",lender:"",loan_payoff:null,reg_expires:null,insured:true,title_status:"In Hand",title_note:"",state:"ND",title_number:"7063175",gvw:40000,on_dep_schedule:true,dep_location:"Line 11",origin:"Physical Title",notes:"3 DRY VAN TRAILMOBILE 2000",doc_url:""},
+    {id:uid(),unit_no:"F-209",name:"53' WHITE DRY VAN",category:"",make:"TRAILM",model:"DRY VAN",year:2000,vin:"1PT01JAHXY9017337",serial:"",plate:"T181522",entity:"SMI",location:"Fargo",status:"Active",assigned_to:"",purchase_date:"2014-10-07",purchase_price:null,sale_price:null,vendor:"",funding:"Cash",lender:"",loan_payoff:null,reg_expires:null,insured:true,title_status:"In Hand",title_note:"",state:"ND",title_number:"7063165",gvw:40000,on_dep_schedule:true,dep_location:"Line 11",origin:"Physical Title",notes:"3 DRY VAN TRAILMOBILE 2000",doc_url:""},
+    {id:uid(),unit_no:"F-210",name:"53' WHITE DRY VAN",category:"",make:"TRAILM",model:"DRY VAN",year:2000,vin:"1PT01JAH1Y9017338",serial:"",plate:"T181516",entity:"SMI",location:"Fargo",status:"Active",assigned_to:"",purchase_date:"2014-10-14",purchase_price:null,sale_price:null,vendor:"",funding:"Cash",lender:"",loan_payoff:null,reg_expires:null,insured:true,title_status:"In Hand",title_note:"",state:"ND",title_number:"7066000",gvw:40000,on_dep_schedule:true,dep_location:"Line 11",origin:"Physical Title",notes:"3 DRY VAN TRAILMOBILE 2000",doc_url:""},
+    {id:uid(),unit_no:"",name:"HERCULES HOMESTEADER ENCLOSE",category:"",make:"HERCULES",model:"HOMESTEADER ENCLOSE",year:2000,vin:"5HABH14274N034386",serial:"",plate:"",entity:"SMI",location:"Fargo",status:"Active",assigned_to:"",purchase_date:"2021-02-12",purchase_price:null,sale_price:null,vendor:"",funding:"Cash",lender:"",loan_payoff:null,reg_expires:null,insured:false,title_status:"In Hand",title_note:"",state:"ND",title_number:"ND1593969664",gvw:null,on_dep_schedule:true,dep_location:"Line 8",origin:"Physical Title",notes:"WE GOT $0 FOR THE TRAILER. NOT ON DEPRECIATION SCHEDULE, ON USED RENTAL EQUIPMENT SHEET. DESTROYED IN ACCIDENT, INSURANCE PAID US (FROM STICKY NOTES)",doc_url:""},
+    {id:uid(),unit_no:"GF101",name:"GF TRUCK W-AT",category:"",make:"GMC",model:"C-SERIES C7H042",year:2001,vin:"1GDJ7H1E91J901089",serial:"",plate:"189-BUB",entity:"SMI",location:"Grand Forks",status:"Active",assigned_to:"",purchase_date:"2007-01-23",purchase_price:null,sale_price:null,vendor:"",funding:"Cash",lender:"",loan_payoff:null,reg_expires:null,insured:true,title_status:"In Hand",title_note:"",state:"ND",title_number:"5606238",gvw:26000,on_dep_schedule:true,dep_location:"Line 43",origin:"Physical Title",notes:"",doc_url:""},
+    {id:uid(),unit_no:"F-102",name:"2ND DEL TRUCK W-AT",category:"",make:"GMC",model:"C-SERIES C7H042",year:2002,vin:"1GDJ7H1E92J901014",serial:"",plate:"186-BUB",entity:"SMI",location:"Fargo",status:"Active",assigned_to:"",purchase_date:"2011-05-26",purchase_price:null,sale_price:null,vendor:"",funding:"Cash",lender:"",loan_payoff:null,reg_expires:null,insured:true,title_status:"In Hand",title_note:"",state:"ND",title_number:"6558497",gvw:24000,on_dep_schedule:true,dep_location:"Line 4",origin:"Physical Title",notes:"",doc_url:""},
+    {id:uid(),unit_no:"F-104",name:"BLUE SEMI",category:"",make:"VOLVO",model:"VNL",year:2002,vin:"4V4NC9JG02N329062",serial:"",plate:"22517P",entity:"SMI",location:"Bismarck",status:"Active",assigned_to:"",purchase_date:"2011-05-26",purchase_price:null,sale_price:null,vendor:"",funding:"Cash",lender:"",loan_payoff:null,reg_expires:null,insured:true,title_status:"In Hand",title_note:"",state:"ND",title_number:"6558492",gvw:80000,on_dep_schedule:true,dep_location:"Line 5",origin:"Physical Title",notes:"",doc_url:""},
+    {id:uid(),unit_no:"",name:"GENERAL MOTORS C6500 C6C042",category:"",make:"GENERAL MOTORS",model:"C6500 C6C042",year:2003,vin:"1GDJ61E73F508305",serial:"",plate:"",entity:"SMI",location:"Fargo",status:"Active",assigned_to:"",purchase_date:"2025-05-20",purchase_price:null,sale_price:null,vendor:"",funding:"Cash",lender:"",loan_payoff:null,reg_expires:null,insured:false,title_status:"In Hand",title_note:"",state:"ND",title_number:"ND1660278272",gvw:null,on_dep_schedule:true,dep_location:"Line 52",origin:"Physical Title",notes:"",doc_url:""},
+    {id:uid(),unit_no:"",name:"FONTAI FLATBED",category:"",make:"FONTAI",model:"FLATBED",year:2007,vin:"13N14830X71540023",serial:"",plate:"",entity:"SMI",location:"Fargo",status:"Active",assigned_to:"",purchase_date:"2014-10-07",purchase_price:null,sale_price:null,vendor:"",funding:"Cash",lender:"",loan_payoff:null,reg_expires:null,insured:false,title_status:"In Hand",title_note:"",state:"ND",title_number:"7063178",gvw:null,on_dep_schedule:true,dep_location:"Line 10",origin:"Physical Title",notes:"",doc_url:""},
+    {id:uid(),unit_no:"",name:"KENWORTH MOTOR CONSTRUCTION",category:"",make:"KENWORTH MOTOR",model:"CONSTRUCTION",year:2007,vin:"3WKDD49X17F172936",serial:"",plate:"",entity:"SMI",location:"Fargo",status:"Active",assigned_to:"",purchase_date:"2022-10-18",purchase_price:null,sale_price:null,vendor:"",funding:"Loan",lender:"First International",loan_payoff:null,reg_expires:null,insured:true,title_status:"In Hand",title_note:"",state:"ND",title_number:"ND1366565376",gvw:null,on_dep_schedule:true,dep_location:"Line 10",origin:"Physical Title",notes:"COPY",doc_url:""},
+    {id:uid(),unit_no:"GF108",name:"PICKUP 1/2 TON -SOLD-SOLD",category:"",make:"CHEVROLET",model:"SILVERADO K1500",year:2008,vin:"1GCEK14X18Z256684",serial:"",plate:"187-BUB",entity:"SMI",location:"Grand Forks",status:"Active",assigned_to:"",purchase_date:"2013-03-04",purchase_price:null,sale_price:null,vendor:"",funding:"Cash",lender:"",loan_payoff:null,reg_expires:null,insured:true,title_status:"In Hand",title_note:"",state:"ND",title_number:"6798629",gvw:9356,on_dep_schedule:true,dep_location:"Line 20",origin:"Physical Title",notes:"SOLD FOR $600 (GF) 9/21/22",doc_url:""},
+    {id:uid(),unit_no:"B-104",name:"VAN TRUCK",category:"",make:"INTERNATIONAL",model:"4000 SERIES 4300",year:2010,vin:"1HTMMAAL4AH162434",serial:"",plate:"766-AUT",entity:"SMI",location:"Bismarck",status:"Active",assigned_to:"",purchase_date:"2015-04-17",purchase_price:null,sale_price:null,vendor:"",funding:"Cash",lender:"",loan_payoff:null,reg_expires:null,insured:true,title_status:"In Hand",title_note:"",state:"ND",title_number:"7138227",gvw:25999,on_dep_schedule:true,dep_location:"Line 42",origin:"Physical Title",notes:"",doc_url:""},
+    {id:uid(),unit_no:"GF-109",name:"VAN TRUCK",category:"",make:"INTERNATIONAL",model:"4000 SERIES 4300",year:2010,vin:"1HTMMAAL5AH167867",serial:"",plate:"833-BTP",entity:"SMI",location:"Grand Forks",status:"Active",assigned_to:"",purchase_date:"2015-04-17",purchase_price:null,sale_price:null,vendor:"",funding:"Cash",lender:"",loan_payoff:null,reg_expires:null,insured:true,title_status:"In Hand",title_note:"",state:"ND",title_number:"7138228",gvw:25999,on_dep_schedule:true,dep_location:"Line 46",origin:"Physical Title",notes:"",doc_url:""},
+    {id:uid(),unit_no:"B-100",name:"PICKUP",category:"",make:"DODGE",model:"RAM 1500",year:2011,vin:"3D7JB1EP2BG569088",serial:"",plate:"566-ATL",entity:"SMI",location:"Fargo",status:"Active",assigned_to:"",purchase_date:"2014-06-06",purchase_price:null,sale_price:null,vendor:"",funding:"Cash",lender:"",loan_payoff:null,reg_expires:null,insured:false,title_status:"In Hand",title_note:"",state:"ND",title_number:"7009606",gvw:9050,on_dep_schedule:false,dep_location:"",origin:"Physical Title",notes:"\"WE DON'T OWN THIS\" - STICKY NOTE",doc_url:""},
+    {id:uid(),unit_no:"",name:"ORANGE TILT BED",category:"",make:"DITCHWITCH",model:"S2AS",year:2011,vin:"1DSB081P3B1700803",serial:"",plate:"T133699",entity:"SMI",location:"Bismarck",status:"Active",assigned_to:"",purchase_date:"2016-02-22",purchase_price:null,sale_price:null,vendor:"",funding:"Cash",lender:"",loan_payoff:null,reg_expires:null,insured:true,title_status:"In Hand",title_note:"",state:"ND",title_number:"7253834",gvw:null,on_dep_schedule:false,dep_location:"",origin:"Physical Title",notes:"WE DID NOT SELL THIS - FILE. NOT ON DEPR, SELL(?), SMI DOES HAVE THIS 11/20/18",doc_url:""},
+    {id:uid(),unit_no:"",name:"ORANGE TILT BED",category:"",make:"DITCHWITCH",model:"NA (BUMPER HITCH)",year:2012,vin:"1DSB081P7C1700501",serial:"",plate:"T181519",entity:"SMI",location:"Fargo",status:"Active",assigned_to:"",purchase_date:"2014-01-10",purchase_price:null,sale_price:null,vendor:"",funding:"Cash",lender:"",loan_payoff:null,reg_expires:null,insured:true,title_status:"In Hand",title_note:"",state:"ND",title_number:"6947698",gvw:null,on_dep_schedule:false,dep_location:"",origin:"Physical Title",notes:"NOT ON DEPR, SELL(?), SMI DOES HAVE THIS 11/20/18",doc_url:""},
+    {id:uid(),unit_no:"",name:"ROADCLIPPER FLATBED",category:"",make:"ROADCLIPPER",model:"FLATBED",year:2012,vin:"46UFU2522C1139914",serial:"",plate:"",entity:"SMI",location:"Fargo",status:"Active",assigned_to:"",purchase_date:"2019-08-20",purchase_price:null,sale_price:null,vendor:"",funding:"Loan",lender:"First International",loan_payoff:null,reg_expires:null,insured:false,title_status:"In Hand",title_note:"",state:"ND",title_number:"ND783218688",gvw:null,on_dep_schedule:false,dep_location:"",origin:"Physical Title",notes:"SMI PURCHASED 11/23/22",doc_url:""},
+    {id:uid(),unit_no:"",name:"PETERBILT MOTOR CONVENTIONAL 386",category:"",make:"PETERBILT MOTOR",model:"CONVENTIONAL 386",year:2012,vin:"1XPHD49XXCD138719",serial:"",plate:"",entity:"SMI",location:"Fargo",status:"Active",assigned_to:"",purchase_date:"2026-02-11",purchase_price:null,sale_price:null,vendor:"",funding:"Cash",lender:"",loan_payoff:null,reg_expires:null,insured:true,title_status:"In Hand",title_note:"",state:"ND",title_number:"ND863641088",gvw:null,on_dep_schedule:false,dep_location:"",origin:"Physical Title",notes:"SMI SEMI IN BISMARCK, NEED TO GET LOAN - EMAIL JAKE, NEED TO GET LIEN HOLDER WHEN LOAN COMES TO",doc_url:""},
+    {id:uid(),unit_no:"",name:"VAN BRIAN B?",category:"",make:"DODGE",model:"CARAVAN/GRAND",year:2013,vin:"2C4RDGCG0DR748773",serial:"",plate:"112-AJZ",entity:"SMI",location:"Fargo",status:"Active",assigned_to:"",purchase_date:"2015-04-02",purchase_price:null,sale_price:null,vendor:"",funding:"Cash",lender:"",loan_payoff:null,reg_expires:null,insured:true,title_status:"In Hand",title_note:"",state:"ND",title_number:"7132096",gvw:4483,on_dep_schedule:true,dep_location:"Line 13",origin:"Physical Title",notes:"",doc_url:""},
+    {id:uid(),unit_no:"",name:"GENERAL MOTORS SAVANA",category:"",make:"GENERAL MOTORS",model:"SAVANA",year:2013,vin:"1GDY72CA5D1904789",serial:"",plate:"",entity:"SMI",location:"Fargo",status:"Active",assigned_to:"",purchase_date:"2026-02-02",purchase_price:null,sale_price:null,vendor:"",funding:"Cash",lender:"",loan_payoff:null,reg_expires:null,insured:true,title_status:"In Hand",title_note:"",state:"ND",title_number:"ND553381376",gvw:null,on_dep_schedule:true,dep_location:"Line 13",origin:"Physical Title",notes:"EMAIL JAKE FOR LOAN -STICKY NOTE",doc_url:""},
+    {id:uid(),unit_no:"F-113",name:"SEMI DELIVERY TRUCK \"RAYS\"",category:"",make:"PETERBILT MOTOR",model:"579",year:2014,vin:"1XPBD49X7ED250077",serial:"",plate:"",entity:"SMI",location:"Fargo",status:"Active",assigned_to:"",purchase_date:"2021-08-06",purchase_price:null,sale_price:null,vendor:"",funding:"Cash",lender:"",loan_payoff:null,reg_expires:null,insured:true,title_status:"In Hand",title_note:"",state:"ND",title_number:"ND652749824",gvw:null,on_dep_schedule:true,dep_location:"Line 28",origin:"Physical Title",notes:"LIA IS BEING ADDED. TITLE WILL BE SENT TO FIRST INTERNATIONAL 8/17/21, NEW TITLE COMING.",doc_url:""},
+    {id:uid(),unit_no:"F-207",name:"SEMI TRAILER",category:"",make:"GREAT DANE TRAILER",model:"FLATBED",year:2015,vin:"1GRDM9626FH727730",serial:"",plate:"T2491",entity:"SMI",location:"Fargo",status:"Active",assigned_to:"",purchase_date:"2020-03-30",purchase_price:null,sale_price:null,vendor:"",funding:"Cash",lender:"",loan_payoff:null,reg_expires:null,insured:true,title_status:"In Hand",title_note:"",state:"ND",title_number:"ND1571316736",gvw:40000,on_dep_schedule:true,dep_location:"Line 27",origin:"Physical Title",notes:"",doc_url:""},
+    {id:uid(),unit_no:"F-213",name:"SEMI DELIVERY TRAILER",category:"",make:"GREAT DANE TRAILER",model:"FLP 0024 00045",year:2015,vin:"1GRDM9029FH727729",serial:"",plate:"",entity:"SMI",location:"Fargo",status:"Active",assigned_to:"",purchase_date:"2021-07-15",purchase_price:null,sale_price:null,vendor:"",funding:"Cash",lender:"",loan_payoff:null,reg_expires:null,insured:true,title_status:"In Hand",title_note:"",state:"ND",title_number:"ND2059062272",gvw:null,on_dep_schedule:true,dep_location:"Line 27",origin:"Physical Title",notes:"GETTING TITLE INTO SFAB, 1)LOAN IN PROCESS, 2) NEED PLATES, PURCHASED FROM SBLOCK 7/1/2021",doc_url:""},
+    {id:uid(),unit_no:"GF-110",name:"QUAD CAB 3/4 TON",category:"",make:"GENERAL MOTORS",model:"SIERRA",year:2016,vin:"1GT22RE89GZ181577",serial:"",plate:"342-BEL",entity:"SMI",location:"Grand Forks",status:"Active",assigned_to:"",purchase_date:"2016-07-19",purchase_price:null,sale_price:null,vendor:"",funding:"Cash",lender:"",loan_payoff:null,reg_expires:null,insured:true,title_status:"In Hand",title_note:"",state:"ND",title_number:"ND782041088",gvw:14430,on_dep_schedule:true,dep_location:"Line 47",origin:"Physical Title",notes:"",doc_url:""},
+    {id:uid(),unit_no:"F-105",name:"FLAT BED",category:"",make:"CHEVROLET",model:"SILVERADO K2500HD W",year:2017,vin:"1GC0KUEG3HZ179777",serial:"",plate:"161-CZX",entity:"SMI",location:"Fargo",status:"Active",assigned_to:"",purchase_date:"2021-03-03",purchase_price:null,sale_price:null,vendor:"",funding:"Loan",lender:"First International",loan_payoff:null,reg_expires:null,insured:true,title_status:"In Hand",title_note:"",state:"ND",title_number:"ND742132736",gvw:null,on_dep_schedule:true,dep_location:"Line 20",origin:"Physical Title",notes:"COPY",doc_url:""},
+    {id:uid(),unit_no:"GF-112",name:"FLATBED TRUCK",category:"",make:"PETERBILT MOTOR",model:"337",year:2017,vin:"2NP2HM7X9HM370768",serial:"",plate:"969DHV",entity:"SFAB",location:"Fargo",status:"Active",assigned_to:"",purchase_date:"2021-02-16",purchase_price:null,sale_price:null,vendor:"",funding:"Loan",lender:"First International",loan_payoff:null,reg_expires:null,insured:true,title_status:"In Hand",title_note:"",state:"ND",title_number:"ND1657566208",gvw:40000,on_dep_schedule:true,dep_location:"Line 22",origin:"Physical Title",notes:"COPY · SOLD TO STRUCTURAL FAB",doc_url:""},
+    {id:uid(),unit_no:"",name:"Dylon  PICKUP",category:"",make:"GENERAL MOTORS",model:"SIERRA",year:2017,vin:"1GT12UEY5HF243686",serial:"",plate:"094CXG",entity:"SMI",location:"Fargo",status:"Active",assigned_to:"",purchase_date:"2020-09-25",purchase_price:null,sale_price:null,vendor:"",funding:"Loan",lender:"Alerus Financial",loan_payoff:null,reg_expires:null,insured:true,title_status:"In Hand",title_note:"",state:"ND",title_number:"ND201118720",gvw:13378,on_dep_schedule:true,dep_location:"Line 15",origin:"Physical Title",notes:"",doc_url:""},
+    {id:uid(),unit_no:"",name:"GENERAL MOTORS SIERRA",category:"",make:"GENERAL MOTORS",model:"SIERRA",year:2017,vin:"1GT12UEY8HF218975",serial:"",plate:"",entity:"SFAB",location:"Fargo",status:"Active",assigned_to:"",purchase_date:"2026-03-16",purchase_price:null,sale_price:null,vendor:"",funding:"Cash",lender:"",loan_payoff:null,reg_expires:null,insured:true,title_status:"In Hand",title_note:"",state:"ND",title_number:"ND250846720",gvw:null,on_dep_schedule:true,dep_location:"Line 15",origin:"Physical Title",notes:"Retitled ND (prev title 00PHQ6C-1, Jeff took original). REQUESTED A LOAN FROM JAKE AT FIBT - WAITING TO HEAR, EVAN HAS PLATES -STICKY NOTE",doc_url:""},
+    {id:uid(),unit_no:"F-114",name:"SEMI DELIVERY TRUCK \"DOUGS\"",category:"",make:"PETERBILT",model:"579",year:2018,vin:"1XPBD49XXJD462692",serial:"",plate:"",entity:"SMI",location:"Fargo",status:"Active",assigned_to:"",purchase_date:"2021-08-06",purchase_price:null,sale_price:null,vendor:"",funding:"Cash",lender:"",loan_payoff:null,reg_expires:null,insured:true,title_status:"In Hand",title_note:"",state:"ND",title_number:"ND1922288640",gvw:null,on_dep_schedule:true,dep_location:"Line 30",origin:"Physical Title",notes:"LIA IS BEING ADDED. TITLE WILL BE SENT TO FIRST INTERNATIONAL 8/17/21, NEW TITLE COMING.*4473 *4621",doc_url:""},
+    {id:uid(),unit_no:"F-212",name:"GREAT DANE TRAILER FXP",category:"",make:"GREAT DANE TRAILER",model:"FXP",year:2018,vin:"1GRDM9625JH101496",serial:"",plate:"T999480",entity:"SMI",location:"Bismarck",status:"Active",assigned_to:"",purchase_date:"2020-06-23",purchase_price:null,sale_price:null,vendor:"",funding:"Cash",lender:"",loan_payoff:null,reg_expires:null,insured:false,title_status:"In Hand",title_note:"",state:"ND",title_number:"ND903734272",gvw:null,on_dep_schedule:true,dep_location:"Line 21",origin:"Physical Title",notes:"TRADED IN TOWARDS OTHER TRAILER - 10/30/24 ($15,500 VALUE)",doc_url:""},
+    {id:uid(),unit_no:"",name:"GREAT DANE TRAI FXP-0024-00048",category:"",make:"GREAT DANE TRAI",model:"FXP-0024-00048",year:2018,vin:"1GRDM9622JH104940",serial:"",plate:"",entity:"SMI",location:"Fargo",status:"Active",assigned_to:"",purchase_date:"2026-01-12",purchase_price:null,sale_price:null,vendor:"",funding:"Cash",lender:"",loan_payoff:null,reg_expires:null,insured:true,title_status:"In Hand",title_note:"",state:"ND",title_number:"ND1386933760",gvw:null,on_dep_schedule:true,dep_location:"Line 21",origin:"Physical Title",notes:"REQUESTED A LOAN FROM JAKE AT FIBT - WAITING -STICKY NOTE",doc_url:""},
+    {id:uid(),unit_no:"",name:"CHEVROLET SILVERADO 1500",category:"",make:"CHEVROLET",model:"SILVERADO 1500",year:2019,vin:"1GC0KREG5KF261225",serial:"",plate:"",entity:"SMI",location:"Fargo",status:"Active",assigned_to:"",purchase_date:"2025-08-13",purchase_price:null,sale_price:null,vendor:"",funding:"Cash",lender:"",loan_payoff:null,reg_expires:null,insured:true,title_status:"In Hand",title_note:"",state:"ND",title_number:"ND1175254528",gvw:null,on_dep_schedule:true,dep_location:"Line 17",origin:"Physical Title",notes:"SOLD TO SMI, 1) NEED TO GET BILL OF SALE, 2) NEED TITLE FROM THOMAS, 3) TITLE IN SMI, $22,300",doc_url:""},
+    {id:uid(),unit_no:"",name:"Bobs Truck",category:"",make:"GMC",model:"SIERRA",year:2021,vin:"1GT49REY5MF156595",serial:"",plate:"",entity:"SMI",location:"Grand Forks",status:"Active",assigned_to:"",purchase_date:"2021-03-30",purchase_price:null,sale_price:null,vendor:"",funding:"Loan",lender:"First International",loan_payoff:null,reg_expires:null,insured:true,title_status:"In Hand",title_note:"",state:"MN",title_number:"17266660-2",gvw:null,on_dep_schedule:true,dep_location:"Line 37",origin:"Physical Title",notes:"",doc_url:""},
+    {id:uid(),unit_no:"",name:"GENERAL MOTORS SIERRA",category:"",make:"GENERAL MOTORS",model:"SIERRA",year:2021,vin:"1GT49REY8MF195083",serial:"",plate:"",entity:"SMI",location:"Fargo",status:"Active",assigned_to:"",purchase_date:"2022-11-28",purchase_price:null,sale_price:null,vendor:"",funding:"Loan",lender:"First International",loan_payoff:null,reg_expires:null,insured:true,title_status:"In Hand",title_note:"",state:"ND",title_number:"ND954671616",gvw:null,on_dep_schedule:true,dep_location:"Line 23",origin:"Physical Title",notes:"",doc_url:""},
+    {id:uid(),unit_no:"",name:"TRAILER 24'",category:"",make:"H AND H TRAILER",model:"H10224HAL140",year:2021,vin:"5JWA22425MN548133",serial:"",plate:"T470378",entity:"SMI",location:"Grand Forks",status:"Active",assigned_to:"",purchase_date:"2021-03-01",purchase_price:null,sale_price:null,vendor:"",funding:"Cash",lender:"",loan_payoff:null,reg_expires:null,insured:true,title_status:"In Hand",title_note:"",state:"ND",title_number:"ND431191040",gvw:3050,on_dep_schedule:true,dep_location:"Line 17",origin:"Physical Title",notes:"",doc_url:""},
+    {id:uid(),unit_no:"",name:"TRAILER 24'",category:"",make:"H AND H TRAILER",model:"H10224HAL140",year:2021,vin:"5JWA22421MN550557",serial:"",plate:"?",entity:"SMI",location:"Bismarck",status:"Active",assigned_to:"",purchase_date:"2021-03-26",purchase_price:null,sale_price:null,vendor:"",funding:"Cash",lender:"",loan_payoff:null,reg_expires:null,insured:true,title_status:"In Hand",title_note:"",state:"ND",title_number:"ND402453504",gvw:3050,on_dep_schedule:true,dep_location:"Line 17",origin:"Physical Title",notes:"*3246",doc_url:""},
+    {id:uid(),unit_no:"",name:"TRAILER",category:"",make:"H AND H TRAILER",model:"H7212SFTV",year:2022,vin:"5JWSC1210NN570838",serial:"",plate:"T497116",entity:"SMI",location:"Fargo",status:"Active",assigned_to:"",purchase_date:"2022-04-14",purchase_price:null,sale_price:null,vendor:"",funding:"Cash",lender:"",loan_payoff:null,reg_expires:null,insured:true,title_status:"In Hand",title_note:"",state:"ND",title_number:"ND106781696",gvw:null,on_dep_schedule:true,dep_location:"Line 17",origin:"Physical Title",notes:"LISC#t497116 EXP DEC22, INSURED AND TITLED, DOT IN A WEEK, ENCLOSED TRAILER, $5900",doc_url:""},
+    {id:uid(),unit_no:"",name:"MIKE OPITRAIL PICKUP",category:"",make:"GMC",model:"SIERRA",year:2022,vin:"1GTUUEET0NZ587664",serial:"",plate:"",entity:"SMI",location:"Fargo",status:"Active",assigned_to:"",purchase_date:"2022-11-18",purchase_price:null,sale_price:null,vendor:"",funding:"Cash",lender:"",loan_payoff:null,reg_expires:null,insured:true,title_status:"In Hand",title_note:"",state:"MN",title_number:"20117177-2",gvw:null,on_dep_schedule:true,dep_location:"Line 32",origin:"Physical Title",notes:"",doc_url:""},
+    {id:uid(),unit_no:"",name:"LAURIE PICKUP",category:"",make:"GENERAL MOTORS",model:"SILVERADO K1500 AT4 CR",year:2022,vin:"1GTUUEETXNZ587543",serial:"",plate:"",entity:"SMI",location:"Fargo",status:"Active",assigned_to:"",purchase_date:"2022-10-13",purchase_price:null,sale_price:null,vendor:"",funding:"Loan",lender:"First International",loan_payoff:null,reg_expires:null,insured:true,title_status:"In Hand",title_note:"",state:"ND",title_number:"ND622445056",gvw:null,on_dep_schedule:true,dep_location:"Line 32",origin:"Physical Title",notes:"*2350",doc_url:""},
+    {id:uid(),unit_no:"",name:"RAM 1500",category:"",make:"RAM",model:"1500",year:2023,vin:"1C6SRFU98PN695469",serial:"",plate:"",entity:"SMI",location:"Fargo",status:"Active",assigned_to:"",purchase_date:"2026-03-11",purchase_price:null,sale_price:null,vendor:"",funding:"Cash",lender:"",loan_payoff:null,reg_expires:null,insured:true,title_status:"In Hand",title_note:"",state:"MN",title_number:"25518420-1",gvw:null,on_dep_schedule:false,dep_location:"",origin:"Physical Title",notes:"NEED LIEN -STICKY NOTE",doc_url:""},
+    {id:uid(),unit_no:"",name:"GMC YUKON",category:"",make:"GMC",model:"YUKON",year:2024,vin:"1GKS2JKT8RR103924",serial:"",plate:"",entity:"SMI",location:"Fargo",status:"Active",assigned_to:"",purchase_date:"2025-08-11",purchase_price:null,sale_price:null,vendor:"",funding:"Loan",lender:"First International",loan_payoff:null,reg_expires:null,insured:true,title_status:"In Hand",title_note:"",state:"MN",title_number:"24572904-1",gvw:null,on_dep_schedule:true,dep_location:"Line 55",origin:"Physical Title",notes:"",doc_url:""},
+    {id:uid(),unit_no:"",name:"FORD F150",category:"",make:"FORD",model:"F150",year:2024,vin:"1FTFW1RG4RFA72392",serial:"",plate:"",entity:"SMI",location:"Fargo",status:"Active",assigned_to:"",purchase_date:"2024-08-05",purchase_price:null,sale_price:null,vendor:"",funding:"Loan",lender:"Choice Financial Group",loan_payoff:null,reg_expires:null,insured:true,title_status:"In Hand",title_note:"",state:"ND",title_number:"ND1714275328",gvw:null,on_dep_schedule:true,dep_location:"Line 56",origin:"Physical Title",notes:"",doc_url:""},
+    {id:uid(),unit_no:"",name:"FORD F150",category:"",make:"FORD",model:"F150",year:2025,vin:"1FTFW1RJ1SFB33327",serial:"",plate:"",entity:"SMI",location:"Fargo",status:"Active",assigned_to:"",purchase_date:"2026-02-23",purchase_price:null,sale_price:null,vendor:"",funding:"Cash",lender:"",loan_payoff:null,reg_expires:null,insured:true,title_status:"In Hand",title_note:"",state:"ND",title_number:"ND1530797568",gvw:null,on_dep_schedule:true,dep_location:"Line 54",origin:"Physical Title",notes:"JON'S RAPTOR IN PERSONAL NAME, SMI ASSET, NEED TO GET LIEN HOLDER",doc_url:""},
+    {id:uid(),unit_no:"GF-105",name:"BOOM TRUCK-SOLD-SOLD",category:"",make:"FREIGHTLINER CO",model:"FLD120",year:1999,vin:"1FVXFMCB3XPF41876",serial:"",plate:"457-CPW",entity:"SMI",location:"Grand Forks",status:"Active",assigned_to:"",purchase_date:"2019-04-22",purchase_price:null,sale_price:null,vendor:"",funding:"Cash",lender:"",loan_payoff:null,reg_expires:null,insured:false,title_status:"In Hand",title_note:"",state:"ND",title_number:"ND1201846272",gvw:34716,on_dep_schedule:true,dep_location:"Line 18",origin:"Physical Title",notes:"SOLD FOR $5,000 (GF) 9/22/22",doc_url:""},
+    {id:uid(),unit_no:"",name:"PJTRLR GOOSENECK",category:"",make:"PJTRLR",model:"GOOSENECK",year:2012,vin:"4P5FD4021C1176759",serial:"",plate:"",entity:"SMI",location:"Fargo",status:"Active",assigned_to:"",purchase_date:"2026-01-27",purchase_price:null,sale_price:null,vendor:"",funding:"Cash",lender:"",loan_payoff:null,reg_expires:null,insured:false,title_status:"In Hand",title_note:"",state:"ND",title_number:"ND1567550976",gvw:null,on_dep_schedule:false,dep_location:"",origin:"Physical Title",notes:"SOLD IN 2020 OR 2021",doc_url:""},
+    {id:uid(),unit_no:"GF-111",name:"SEMI",category:"",make:"GREIGHTLINER CO",model:"CONVENTIONAL",year:2004,vin:"1FUJA6DE44LN24372",serial:"",plate:"30886P",entity:"SMI",location:"Grand Forks",status:"Active",assigned_to:"",purchase_date:"2020-03-26",purchase_price:null,sale_price:null,vendor:"",funding:"Cash",lender:"",loan_payoff:null,reg_expires:null,insured:false,title_status:"Missing",title_note:"",state:"ND",title_number:"ND255697920",gvw:80000,on_dep_schedule:false,dep_location:"",origin:"Physical Title",notes:"COPY, GF IS SELLING",doc_url:""},
+    {id:uid(),unit_no:"B-101",name:"SILVERADO (HUTCH)",category:"",make:"CHEVROLET",model:"SILVERADO K2500HD L",year:2009,vin:"1GCHK63K89F106039",serial:"",plate:"430-CVH",entity:"SMI",location:"Bismarck",status:"Active",assigned_to:"",purchase_date:"2019-08-12",purchase_price:null,sale_price:null,vendor:"",funding:"Cash",lender:"",loan_payoff:null,reg_expires:null,insured:true,title_status:"Missing",title_note:"",state:"ND",title_number:"ND1793262592",gvw:12078,on_dep_schedule:true,dep_location:"Line 20",origin:"Physical Title",notes:"SOLD, WE HAVE COPY, ORIGINAL WAS GIVEN TO DANIEL DAMMEL",doc_url:""},
+    {id:uid(),unit_no:"",name:"ORANGE TILT BED",category:"",make:"DITCHWITCH",model:"DITCH WITCH TRAILER",year:2012,vin:"1DSB081P8C1700507",serial:"",plate:"T181524",entity:"SMI",location:"Grand Forks",status:"Active",assigned_to:"",purchase_date:"2012-08-22",purchase_price:null,sale_price:null,vendor:"",funding:"Cash",lender:"",loan_payoff:null,reg_expires:null,insured:true,title_status:"Missing",title_note:"",state:"",title_number:"",gvw:null,on_dep_schedule:false,dep_location:"",origin:"Physical Title",notes:"CERTIFICATE OF ORIGIN FOR A VEHICLE",doc_url:""},
+    {id:uid(),unit_no:"",name:"GMC SIERRA",category:"",make:"GMC",model:"SIERRA",year:2017,vin:"3GTU2PEC7HG113734",serial:"",plate:"",entity:"SMI",location:"Fargo",status:"Active",assigned_to:"",purchase_date:"2018-08-10",purchase_price:null,sale_price:null,vendor:"",funding:"Cash",lender:"",loan_payoff:null,reg_expires:null,insured:false,title_status:"Missing",title_note:"",state:"SC",title_number:"770650351800885",gvw:null,on_dep_schedule:true,dep_location:"Line 15",origin:"Physical Title",notes:"ALERUS HAS TITLE, FOR RISE",doc_url:""},
+    {id:uid(),unit_no:"",name:"GENERAL MOTORS SIERRA",category:"",make:"GENERAL MOTORS",model:"SIERRA",year:2017,vin:"1GT12SEG1HF200068",serial:"",plate:"895-CGY",entity:"SMI",location:"Fargo",status:"Active",assigned_to:"",purchase_date:"2018-07-27",purchase_price:null,sale_price:null,vendor:"",funding:"Cash",lender:"",loan_payoff:null,reg_expires:null,insured:true,title_status:"Missing",title_note:"",state:"ND",title_number:"ND1860331520",gvw:13378,on_dep_schedule:true,dep_location:"Line 15",origin:"Physical Title",notes:"ALERUS HAS TITLE, COPY FROM EMAIL",doc_url:""},
+    {id:uid(),unit_no:"",name:"AUSTEN  BISMARCK",category:"",make:"GENERAL MOTORS",model:"SIERRA",year:2017,vin:"1GT12SEG1HF209689",serial:"",plate:"896-CGY",entity:"SMI",location:"Fargo",status:"Active",assigned_to:"",purchase_date:"2018-07-27",purchase_price:null,sale_price:null,vendor:"",funding:"Cash",lender:"",loan_payoff:null,reg_expires:null,insured:true,title_status:"Missing",title_note:"",state:"ND",title_number:"ND518154240",gvw:13378,on_dep_schedule:true,dep_location:"Line 15",origin:"Physical Title",notes:"ALERUS HAS TITLE, COPY FROM EMAIL",doc_url:""},
+    {id:uid(),unit_no:"",name:"SILVERADO (CHRIS)",category:"",make:"CHEVROLET",model:"SILVERADO",year:2017,vin:"1GC1KVEG5HF151734",serial:"",plate:"735-CDF",entity:"SMI",location:"Fargo",status:"Active",assigned_to:"",purchase_date:"2018-03-06",purchase_price:null,sale_price:null,vendor:"",funding:"Cash",lender:"",loan_payoff:null,reg_expires:null,insured:false,title_status:"Missing",title_note:"",state:"ND",title_number:"ND1439336448",gvw:13378,on_dep_schedule:true,dep_location:"Line 20",origin:"Physical Title",notes:"ALERUS HAS TITLE, COPY FROM EMAIL",doc_url:""},
+    {id:uid(),unit_no:"",name:"TOMS TRUCK",category:"",make:"GMC",model:"SIERRA HD DENALI",year:2017,vin:"1GT12UEY2HF195998",serial:"",plate:"836 DIV",entity:"SMI",location:"Bismarck",status:"Active",assigned_to:"",purchase_date:"2025-07-09",purchase_price:null,sale_price:null,vendor:"",funding:"Cash",lender:"",loan_payoff:null,reg_expires:null,insured:false,title_status:"Missing",title_note:"",state:"",title_number:"",gvw:13378,on_dep_schedule:true,dep_location:"Line 24",origin:"Physical Title",notes:"SOLD TO REAL STEEL, TITLE WENT TO THOMAS, KNOWS WE NEED IT BACK",doc_url:""},
+    {id:uid(),unit_no:"F-214",name:"48' FLATBED",category:"",make:"GREAT DANE TRAILER",model:"FLP-0024-00048",year:2018,vin:"1GRDM9627JH123483",serial:"",plate:"T403747",entity:"SMI",location:"Grand Forks",status:"Active",assigned_to:"",purchase_date:"2017-10-12",purchase_price:null,sale_price:null,vendor:"",funding:"Cash",lender:"",loan_payoff:null,reg_expires:null,insured:true,title_status:"Missing",title_note:"",state:"ND",title_number:"ND1850585088",gvw:null,on_dep_schedule:true,dep_location:"Line 21",origin:"Physical Title",notes:"ALERUS HAS TITLE, COPY FROM EMAIL",doc_url:""},
+    {id:uid(),unit_no:"",name:"GREAT DANE TRAILER",category:"",make:"GREAT DANE",model:"TRAILER",year:2018,vin:"1GRDM9622JH104940",serial:"",plate:"",entity:"SMI",location:"Fargo",status:"Active",assigned_to:"",purchase_date:"2026-01-01",purchase_price:null,sale_price:null,vendor:"",funding:"Cash",lender:"",loan_payoff:null,reg_expires:null,insured:true,title_status:"Missing",title_note:"",state:"",title_number:"",gvw:null,on_dep_schedule:true,dep_location:"Line 48",origin:"Physical Title",notes:"BILL OF SALE",doc_url:""},
+    {id:uid(),unit_no:"",name:"CHEVROLET SILVERADO",category:"",make:"CHEVROLET",model:"SILVERADO",year:2023,vin:"1GC1YNEY7PF204665",serial:"",plate:"",entity:"SFAB",location:"Fargo",status:"Active",assigned_to:"",purchase_date:"2025-07-15",purchase_price:null,sale_price:null,vendor:"",funding:"Cash",lender:"",loan_payoff:null,reg_expires:null,insured:true,title_status:"Missing",title_note:"",state:"",title_number:"",gvw:null,on_dep_schedule:true,dep_location:"Line 20",origin:"Physical Title",notes:"PURCHASE CONTRACT",doc_url:""},
+    {id:uid(),unit_no:"",name:"GMC YUKON XL",category:"",make:"GMC",model:"YUKON XL",year:2024,vin:"1GKS2JKT8RR103924",serial:"",plate:"",entity:"SMI",location:"Fargo",status:"Active",assigned_to:"",purchase_date:"2025-06-16",purchase_price:null,sale_price:null,vendor:"",funding:"Cash",lender:"",loan_payoff:null,reg_expires:null,insured:true,title_status:"Missing",title_note:"",state:"",title_number:"",gvw:null,on_dep_schedule:true,dep_location:"Line 55",origin:"Physical Title",notes:"PURCHASE CONTRACT, BEN'S YUKON, IN GP, LOAN IN PROCESS",doc_url:""},
+    {id:uid(),unit_no:"",name:"CHEVROLET SILVERADO 1500",category:"",make:"CHEVROLET",model:"SILVERADO 1500",year:2026,vin:"1GCPKKEK0TZ103126",serial:"",plate:"",entity:"SMI",location:"Fargo",status:"Active",assigned_to:"",purchase_date:"2026-03-06",purchase_price:null,sale_price:null,vendor:"",funding:"Cash",lender:"",loan_payoff:null,reg_expires:null,insured:true,title_status:"Missing",title_note:"",state:"",title_number:"",gvw:null,on_dep_schedule:true,dep_location:"Line 20",origin:"Physical Title",notes:"WAITING ON TITLE, WHEN ARRIVES, REMOVE BEN, GET LOAN - $50,938.12 -STICKY NOTE",doc_url:""},
+    {id:uid(),unit_no:"",name:"PUP TRAILER",category:"",make:"DRAKE",model:"PUP",year:1973,vin:"445473",serial:"",plate:"T181514",entity:"SMI",location:"Fargo",status:"Active",assigned_to:"",purchase_date:null,purchase_price:null,sale_price:null,vendor:"",funding:"Cash",lender:"",loan_payoff:null,reg_expires:null,insured:true,title_status:"Missing",title_note:"",state:"",title_number:"",gvw:null,on_dep_schedule:false,dep_location:"",origin:"Old Sheet",notes:"",doc_url:""},
+    {id:uid(),unit_no:"F-107",name:"VAN TRUCK",category:"",make:"FREIGHTLINER",model:"",year:1998,vin:"1FV6HLBA1WH906649",serial:"",plate:"22519P",entity:"SMI",location:"Fargo",status:"Active",assigned_to:"",purchase_date:null,purchase_price:null,sale_price:null,vendor:"",funding:"Cash",lender:"",loan_payoff:null,reg_expires:null,insured:false,title_status:"Missing",title_note:"",state:"",title_number:"",gvw:42000,on_dep_schedule:true,dep_location:"Line 3",origin:"Old Sheet",notes:"",doc_url:""},
+    {id:uid(),unit_no:"B-109",name:"BOOM TRUCK",category:"",make:"STERLING",model:"TRUCK",year:1999,vin:"2FZNNECB2XAA51747",serial:"",plate:"561-AHG",entity:"SMI",location:"Bismarck",status:"Active",assigned_to:"",purchase_date:null,purchase_price:null,sale_price:null,vendor:"",funding:"Cash",lender:"",loan_payoff:null,reg_expires:null,insured:false,title_status:"Missing",title_note:"",state:"",title_number:"",gvw:57000,on_dep_schedule:true,dep_location:"Line 39",origin:"Old Sheet",notes:"",doc_url:""},
+    {id:uid(),unit_no:"F-1",name:"TRUCK W-AT",category:"",make:"GMC",model:"2 TON",year:2000,vin:"1GDJ7H1D8YJ90463",serial:"",plate:"190-BUB",entity:"SMI",location:"Fargo",status:"Active",assigned_to:"",purchase_date:null,purchase_price:null,sale_price:null,vendor:"",funding:"Cash",lender:"",loan_payoff:null,reg_expires:null,insured:false,title_status:"Missing",title_note:"",state:"",title_number:"",gvw:26000,on_dep_schedule:true,dep_location:"Line 38",origin:"Old Sheet",notes:"",doc_url:""},
+    {id:uid(),unit_no:"B-107",name:"SEMI",category:"",make:"STERLING",model:"TRACTOR",year:2001,vin:"2FWYHWEB51AF10619",serial:"",plate:"797-CZV",entity:"SMI",location:"Bismarck",status:"Active",assigned_to:"",purchase_date:null,purchase_price:null,sale_price:null,vendor:"",funding:"Cash",lender:"",loan_payoff:null,reg_expires:null,insured:false,title_status:"Missing",title_note:"",state:"",title_number:"",gvw:32000,on_dep_schedule:true,dep_location:"Line 43",origin:"Old Sheet",notes:"",doc_url:""},
+    {id:uid(),unit_no:"",name:"2-TON DELIVERY",category:"",make:"GMC",model:"C6500-2 TON",year:2003,vin:"1GDJ6J1E73F508305",serial:"",plate:"339CKH",entity:"SMI",location:"Fargo",status:"Active",assigned_to:"",purchase_date:null,purchase_price:null,sale_price:null,vendor:"",funding:"Cash",lender:"",loan_payoff:null,reg_expires:null,insured:true,title_status:"Missing",title_note:"",state:"",title_number:"",gvw:26000,on_dep_schedule:true,dep_location:"Line 52",origin:"Old Sheet",notes:"",doc_url:""},
+    {id:uid(),unit_no:"SF-307",name:"SEMI DELIVERY TRAILER",category:"",make:"TRANSCRAFT",model:"CORP TRAILER",year:2004,vin:"1TTF4220004201186",serial:"",plate:"",entity:"SFAB",location:"Fargo",status:"Active",assigned_to:"",purchase_date:null,purchase_price:null,sale_price:null,vendor:"",funding:"Cash",lender:"",loan_payoff:null,reg_expires:null,insured:true,title_status:"Missing",title_note:"",state:"",title_number:"",gvw:null,on_dep_schedule:false,dep_location:"",origin:"Old Sheet",notes:"",doc_url:""},
+    {id:uid(),unit_no:"B-106",name:"SEMI",category:"",make:"FREIGHTLINER",model:"COLUMBIA",year:2005,vin:"1FUJA6CK05LN65302",serial:"",plate:"772-DAJ",entity:"SMI",location:"Bismarck",status:"Active",assigned_to:"",purchase_date:null,purchase_price:null,sale_price:null,vendor:"",funding:"Cash",lender:"",loan_payoff:null,reg_expires:null,insured:true,title_status:"Missing",title_note:"",state:"",title_number:"",gvw:80000,on_dep_schedule:true,dep_location:"Line 45",origin:"Old Sheet",notes:"",doc_url:""},
+    {id:uid(),unit_no:"SF-201",name:"BLACK/ALUM 48'",category:"",make:"FONTAINE",model:"48' FLATBED",year:2007,vin:"13N14830X7150023",serial:"",plate:"T181518",entity:"SFAB",location:"Fargo",status:"Active",assigned_to:"",purchase_date:null,purchase_price:null,sale_price:null,vendor:"",funding:"Cash",lender:"",loan_payoff:null,reg_expires:null,insured:true,title_status:"Missing",title_note:"",state:"",title_number:"",gvw:40000,on_dep_schedule:true,dep_location:"Line 10",origin:"Old Sheet",notes:"",doc_url:""},
+    {id:uid(),unit_no:"F-215",name:"SEMI DELIVERY TRAILER",category:"",make:"DRY VAN",model:"TRAILER",year:2007,vin:"1UYVS25307P088811",serial:"",plate:"",entity:"SMI",location:"Fargo",status:"Active",assigned_to:"",purchase_date:null,purchase_price:null,sale_price:null,vendor:"",funding:"Cash",lender:"",loan_payoff:null,reg_expires:null,insured:true,title_status:"Missing",title_note:"",state:"",title_number:"",gvw:null,on_dep_schedule:true,dep_location:"Line 31",origin:"Old Sheet",notes:"",doc_url:""},
+    {id:uid(),unit_no:"",name:"ALUM TRAILER",category:"",make:"H&H",model:"A 18 2 1241013",year:2015,vin:"533AM1829FC245954",serial:"",plate:"T2490",entity:"SMI",location:"Fargo",status:"Active",assigned_to:"",purchase_date:null,purchase_price:null,sale_price:null,vendor:"",funding:"Cash",lender:"",loan_payoff:null,reg_expires:null,insured:true,title_status:"Missing",title_note:"",state:"",title_number:"",gvw:7000,on_dep_schedule:true,dep_location:"Line 12",origin:"Old Sheet",notes:"",doc_url:""},
+    {id:uid(),unit_no:"B-103",name:"ALUM TRAILER",category:"",make:"H&H",model:"FLATBED TRAILER",year:2019,vin:"5JWA21820KN514621",serial:"",plate:"T419779",entity:"SMI",location:"Bismarck",status:"Active",assigned_to:"",purchase_date:null,purchase_price:null,sale_price:null,vendor:"",funding:"Cash",lender:"",loan_payoff:null,reg_expires:null,insured:false,title_status:"Missing",title_note:"",state:"",title_number:"",gvw:null,on_dep_schedule:true,dep_location:"Line 17",origin:"Old Sheet",notes:"",doc_url:""},
+    {id:uid(),unit_no:"F-204",name:"18' ALUM DECK OVER",category:"",make:"H&H",model:"H10218HAL100",year:2019,vin:"5JWA21820KN514473",serial:"",plate:"T428111",entity:"SMI",location:"Fargo",status:"Active",assigned_to:"",purchase_date:null,purchase_price:null,sale_price:null,vendor:"",funding:"Cash",lender:"",loan_payoff:null,reg_expires:null,insured:true,title_status:"Missing",title_note:"",state:"",title_number:"",gvw:null,on_dep_schedule:true,dep_location:"Line 17",origin:"Old Sheet",notes:"",doc_url:""},
+    {id:uid(),unit_no:"B755",name:"Reitnouer Drop Deck",category:"",make:"Reitnouer",model:"Drop Deck",year:2019,vin:"1RND53A29KR048239",serial:"",plate:"",entity:"SMI",location:"Bismarck",status:"Active",assigned_to:"",purchase_date:null,purchase_price:null,sale_price:null,vendor:"",funding:"Cash",lender:"",loan_payoff:null,reg_expires:null,insured:true,title_status:"Missing",title_note:"",state:"",title_number:"",gvw:90000,on_dep_schedule:true,dep_location:"Line 51",origin:"Old Sheet",notes:"Insurance: Waiting on Title",doc_url:""},
+    {id:uid(),unit_no:"",name:"H10218HAL-100",category:"",make:"H & H Aluminum",model:"Deck Over  18'",year:2021,vin:"5JWA2189MN543246",serial:"",plate:"",entity:"SMI",location:"Bismarck",status:"Active",assigned_to:"",purchase_date:null,purchase_price:null,sale_price:null,vendor:"",funding:"Cash",lender:"",loan_payoff:null,reg_expires:null,insured:true,title_status:"Missing",title_note:"",state:"",title_number:"",gvw:9990,on_dep_schedule:true,dep_location:"Line 23",origin:"Old Sheet",notes:"",doc_url:""},
+    {id:uid(),unit_no:"",name:"CHRIS D PICKUP",category:"",make:"GMC",model:"SIERRA",year:2022,vin:"1GTUUEET8NZ587282",serial:"",plate:"",entity:"SMI",location:"Fargo",status:"Active",assigned_to:"",purchase_date:null,purchase_price:null,sale_price:null,vendor:"",funding:"Cash",lender:"",loan_payoff:null,reg_expires:null,insured:true,title_status:"Missing",title_note:"",state:"",title_number:"",gvw:null,on_dep_schedule:true,dep_location:"Line 32",origin:"Old Sheet",notes:"",doc_url:""},
+    {id:uid(),unit_no:"",name:"LEVIS TRUCK",category:"",make:"GMC",model:"SIERRA 3500HD",year:2022,vin:"1GT49WEY2NF108021",serial:"",plate:"",entity:"SMI",location:"Fargo",status:"Active",assigned_to:"",purchase_date:null,purchase_price:null,sale_price:null,vendor:"",funding:"Cash",lender:"",loan_payoff:null,reg_expires:null,insured:true,title_status:"Missing",title_note:"",state:"",title_number:"",gvw:null,on_dep_schedule:true,dep_location:"Line 32",origin:"Old Sheet",notes:"",doc_url:""},
+    {id:uid(),unit_no:"",name:"DECK-OVER TRAILER",category:"Trailer",make:"NORDTEK",model:"DO102X24-14K",year:2027,vin:"2NDKB2427VL001582",serial:"",plate:"",entity:"SMI",location:"Fargo",status:"Active",assigned_to:"",purchase_date:"2026-05-05",purchase_price:null,sale_price:null,vendor:"James Kota, Inc. — Jamestown ND",funding:"Trade-In",lender:"",loan_payoff:null,reg_expires:null,insured:true,title_status:"In Hand",title_note:"Certificate of Origin (MSO) No. 00001950 — not yet titled",state:"ND",title_number:"",gvw:14000,on_dep_schedule:false,dep_location:"",origin:"Physical Title",notes:"Purchased from James Kota Inc, Invoice 262290. COO transfer date 5/5/26. Bill of sale scanned blank — price and trade-in not captured. On carrier policy at $14,995 (carrier VIN missing a char: 2NDKB2427B001582).",doc_url:""},
+    {id:uid(),unit_no:"",name:"PETERBILT 579",category:"",make:"PETERBILT",model:"579",year:2016,vin:"1XPBDP9X8GD307665",serial:"",plate:"",entity:"SFAB",location:"Fargo",status:"Active",assigned_to:"",purchase_date:null,purchase_price:null,sale_price:null,vendor:"",funding:"Cash",lender:"",loan_payoff:null,reg_expires:null,insured:true,title_status:"Missing",title_note:"",state:"",title_number:"",gvw:null,on_dep_schedule:false,dep_location:"",origin:"",notes:"Added from carrier policy (SFAB veh 10, cost new n/a) — not on Title Master v13; verify ownership and locate title.",doc_url:""},
+    {id:uid(),unit_no:"",name:"PETERBILT 337",category:"",make:"PETERBILT",model:"337",year:2021,vin:"2NP2HJ7X2MM761267",serial:"",plate:"",entity:"SFAB",location:"Fargo",status:"Active",assigned_to:"",purchase_date:null,purchase_price:null,sale_price:null,vendor:"",funding:"Cash",lender:"",loan_payoff:null,reg_expires:null,insured:true,title_status:"Missing",title_note:"",state:"",title_number:"",gvw:null,on_dep_schedule:false,dep_location:"",origin:"",notes:"Added from carrier policy (SFAB veh 13, cost new 117568) — not on Title Master v13; verify ownership and locate title.",doc_url:""},
+    {id:uid(),unit_no:"",name:"CHEVROLET 2500",category:"",make:"CHEVROLET",model:"2500",year:2015,vin:"1GC0KUEB7FZ547766",serial:"",plate:"",entity:"SMI",location:"Fargo",status:"Active",assigned_to:"",purchase_date:null,purchase_price:null,sale_price:null,vendor:"",funding:"Cash",lender:"",loan_payoff:null,reg_expires:null,insured:true,title_status:"Missing",title_note:"",state:"",title_number:"",gvw:null,on_dep_schedule:false,dep_location:"",origin:"",notes:"Added from carrier policy (SMI veh 95, cost new 51383) — not on Title Master v13; verify ownership and locate title.",doc_url:""},
+    {id:uid(),unit_no:"",name:"PETERBILT 6X4 111.7 BBC ALUM C",category:"",make:"PETERBILT",model:"6x4 111.7 BBC Alum C",year:1995,vin:"1XPALE0X3SN358462",serial:"",plate:"",entity:"SMI",location:"Fargo",status:"Active",assigned_to:"",purchase_date:null,purchase_price:null,sale_price:null,vendor:"",funding:"Cash",lender:"",loan_payoff:null,reg_expires:null,insured:true,title_status:"Missing",title_note:"",state:"",title_number:"",gvw:null,on_dep_schedule:false,dep_location:"",origin:"",notes:"Added from carrier policy (SMI veh 101, cost new 132280) — not on Title Master v13; verify ownership and locate title.",doc_url:""},
+    {id:uid(),unit_no:"",name:"RAM 1500",category:"",make:"RAM",model:"1500",year:2013,vin:"3C6JR6EP1DG503130",serial:"",plate:"",entity:"SMI",location:"Fargo",status:"Active",assigned_to:"",purchase_date:null,purchase_price:null,sale_price:null,vendor:"",funding:"Cash",lender:"",loan_payoff:null,reg_expires:null,insured:true,title_status:"Missing",title_note:"",state:"",title_number:"",gvw:null,on_dep_schedule:false,dep_location:"",origin:"",notes:"Added from carrier policy (SMI veh 103, cost new 27300) — not on Title Master v13; verify ownership and locate title.",doc_url:""},
+    {id:uid(),unit_no:"",name:"GMC SIERRA 1500",category:"",make:"GMC",model:"SIERRA 1500",year:2024,vin:"3GTUUEE82RG205698",serial:"",plate:"",entity:"SMI",location:"Fargo",status:"Active",assigned_to:"",purchase_date:null,purchase_price:null,sale_price:null,vendor:"",funding:"Cash",lender:"",loan_payoff:null,reg_expires:null,insured:true,title_status:"Missing",title_note:"",state:"",title_number:"",gvw:null,on_dep_schedule:false,dep_location:"",origin:"",notes:"Added from carrier policy (SMI veh 107, cost new 66100) — not on Title Master v13; verify ownership and locate title.",doc_url:""},
+    {id:uid(),unit_no:"",name:"H&H TRAILERS ALUMINUM RAIL SIDE C",category:"",make:"H&H TRAILERS",model:"ALUMINUM RAIL SIDE C",year:2021,vin:"5JWA21825MN552350",serial:"",plate:"",entity:"SMI",location:"Fargo",status:"Active",assigned_to:"",purchase_date:null,purchase_price:null,sale_price:null,vendor:"",funding:"Cash",lender:"",loan_payoff:null,reg_expires:null,insured:true,title_status:"Missing",title_note:"",state:"",title_number:"",gvw:null,on_dep_schedule:false,dep_location:"",origin:"",notes:"Added from carrier policy (SMI veh 115, cost new 6853) — not on Title Master v13; verify ownership and locate title.",doc_url:""}
+  ];
+}
+
+/* ---------- derived ---------- */
+const byId = id => state.assets.find(a=>a.id===id);
+function filtered(){
+  const f=state.f, q=f.q.toLowerCase().trim();
+  let r=state.assets.filter(a=>{
+    if(f.entity && a.entity!==f.entity) return false;
+    if(f.cat && a.category!==f.cat) return false;
+    if(f.loc && a.location!==f.loc) return false;
+    if(f.status==="__held"){ if(!HELD.includes(a.status)) return false; }
+    else if(f.status && a.status!==f.status) return false;
+    if(f.nounit && String(a.unit_no||"").trim()!=="") return false;
+    if(q && ![a.unit_no,a.name,a.make,a.model,a.vin,a.serial,a.plate,a.assigned_to,a.notes].join(" ").toLowerCase().includes(q)) return false;
+    return true;
+  });
+  const k=state.sort.k,d=state.sort.dir;
+  r.sort((a,b)=>{
+    if(k==="unit_no") return unitSortKey(a.unit_no).localeCompare(unitSortKey(b.unit_no))*d;
+    if(["purchase_price","sale_price","year","loan_payoff"].includes(k)) return ((Number(a[k])||0)-(Number(b[k])||0))*d;
+    return String(a[k]||"").localeCompare(String(b[k]||""))*d;
+  });
+  return r;
+}
+
+/* ---------- shell ---------- */
+function render(){
+  $("#verTag").textContent="v"+BAKED_CONFIG.APP_VERSION;
+  const c=$("#conn");
+  c.textContent = LIVE? "SUPABASE LIVE":"LOCAL — NOT SAVED";
+  c.className = "chip "+(LIVE?"live":"local");
+  [...document.querySelectorAll("#tabs button")].forEach(b=>b.classList.toggle("on",b.dataset.v===state.view));
+  ({dash:vDash,assets:vAssets,list:vList,data:vData}[state.view])();
+}
+$("#tabs").addEventListener("click",e=>{const b=e.target.closest("button"); if(!b)return; state.view=b.dataset.v; render(); window.scrollTo(0,0);});
+
+function banner(){
+  if(LIVE) return "";
+  return `<div class="banner"><strong>Local mode — nothing is saved.</strong> Sample data loaded so you can drive it.
+  Paste your Supabase URL and anon key into <code>BAKED_CONFIG</code>, run the SQL in <code>docs.html</code>, reload.</div>`;
+}
+
+/* ---------- dashboard ---------- */
+function vDash(){
+  const A=state.assets;
+  const held=A.filter(a=>HELD.includes(a.status));
+  const cost=held.reduce((s,a)=>s+(Number(a.purchase_price)||0),0);
+  const debt=held.reduce((s,a)=>s+(Number(a.loan_payoff)||0),0);
+  const sold=A.filter(a=>a.status==="Sold");
+  const proceeds=sold.reduce((s,a)=>s+(Number(a.sale_price)||0),0);
+  const gain=sold.reduce((s,a)=>s+(gainOf(a)||0),0);
+  const renew=held.filter(a=>a.reg_expires && daysUntil(a.reg_expires)<=60).sort((a,b)=>String(a.reg_expires).localeCompare(String(b.reg_expires)));
+  const noIns=held.filter(a=>!a.insured);
+
+  const ents=[...new Set(A.map(a=>a.entity).filter(Boolean))];
+  const byEnt=ents.map(e=>{
+    const r=held.filter(a=>a.entity===e);
+    return {k:e,n:r.length,cost:r.reduce((s,a)=>s+(Number(a.purchase_price)||0),0),debt:r.reduce((s,a)=>s+(Number(a.loan_payoff)||0),0)};
+  }).filter(r=>r.n).sort((a,b)=>b.cost-a.cost);
+  const byLoc=LOCATIONS.map(l=>{
+    const r=held.filter(a=>a.location===l);
+    return {k:l,n:r.length,cost:r.reduce((s,a)=>s+(Number(a.purchase_price)||0),0)};
+  });
+
+  $("#view").innerHTML = banner()+`
+  <div class="kpis">
+    <div class="kpi"><div class="lbl">Assets held</div><div class="val">${held.length}</div><div class="sub">${A.length} records total</div></div>
+    <div class="kpi hi"><div class="lbl">Purchase price</div><div class="val">${money(cost)}</div><div class="sub">held assets, at cost</div></div>
+    <div class="kpi"><div class="lbl">Loan payoff</div><div class="val">${money(debt)}</div><div class="sub">${held.filter(a=>Number(a.loan_payoff)>0).length} financed</div></div>
+    <div class="kpi"><div class="lbl">Sold</div><div class="val">${sold.length}</div><div class="sub">${money(proceeds)} sell price</div></div>
+    <div class="kpi"><div class="lbl">Titles missing</div><div class="val ${A.filter(a=>a.title_status==="Missing").length?"neg":""}">${A.filter(a=>a.title_status==="Missing").length}</div><div class="sub">${A.filter(a=>a.origin==="Old Sheet").length} on the old sheet</div></div>
+    <div class="kpi"><div class="lbl">Sell vs. purchase</div><div class="val ${gain>=0?"pos":"neg"}">${signed(gain)}</div><div class="sub">before depreciation</div></div>
+  </div>
+
+  ${(renew.length||noIns.length)?`<div class="tile"><div class="th"><h2>Needs attention</h2></div><div class="tb flush">
+    <table class="responsive"><tbody>
+    ${renew.map(a=>{const d=daysUntil(a.reg_expires);return `<tr class="clickable" data-open="${a.id}">
+      <td data-l="Flag"><span class="pill ${d<0?"s-Disposed":"s-Repair"}">${d<0?"Registration expired":"Renewal due"}</span></td>
+      <td data-l="Asset"><span class="mono">${esc(a.unit_no||"")}</span> ${esc(a.name)}</td>
+      <td data-l="Date" class="num">${dt(a.reg_expires)} <span class="hint">(${d<0?Math.abs(d)+"d ago":"in "+d+"d"})</span></td></tr>`}).join("")}
+    ${noIns.map(a=>`<tr class="clickable" data-open="${a.id}">
+      <td data-l="Flag"><span class="pill s-Disposed">Not marked insured</span></td>
+      <td data-l="Asset"><span class="mono">${esc(a.unit_no||"")}</span> ${esc(a.name)}</td>
+      <td data-l="Entity" class="num">${esc(a.entity||"—")}</td></tr>`).join("")}
+    </tbody></table></div></div>`:""}
+
+  <div class="tile"><div class="th"><h2>By branch — held assets</h2></div><div class="tb flush">
+    <table class="responsive"><thead><tr><th class="nosort">Branch</th><th class="nosort">Count</th><th class="nosort" style="text-align:right">Purchase price</th></tr></thead>
+    <tbody>${byLoc.map(r=>`<tr class="clickable" data-loc="${esc(r.k)}"><td data-l="Branch">${esc(r.k)}</td><td data-l="Count" class="num">${r.n}</td><td data-l="Cost" class="num">${money(r.cost)}</td></tr>`).join("")}</tbody>
+    <tfoot><tr><td>Total</td><td class="num">${byLoc.reduce((s,r)=>s+r.n,0)}</td><td class="num">${money(byLoc.reduce((s,r)=>s+r.cost,0))}</td></tr></tfoot>
+    </table></div></div>
+
+  <div class="tile"><div class="th"><h2>By entity — held assets</h2></div><div class="tb flush">
+    <table class="responsive"><thead><tr><th class="nosort">Entity</th><th class="nosort">Count</th><th class="nosort" style="text-align:right">Purchase price</th><th class="nosort" style="text-align:right">Loan payoff</th></tr></thead>
+    <tbody>${byEnt.length?byEnt.map(r=>`<tr><td data-l="Entity">${esc(r.k)}</td><td data-l="Count" class="num">${r.n}</td><td data-l="Cost" class="num">${money(r.cost)}</td><td data-l="Payoff" class="num">${money(r.debt)}</td></tr>`).join("")
+      :`<tr><td colspan="4" class="empty">No assets yet.</td></tr>`}</tbody>
+    ${byEnt.length?`<tfoot><tr><td>Total</td><td class="num">${byEnt.reduce((s,r)=>s+r.n,0)}</td><td class="num">${money(byEnt.reduce((s,r)=>s+r.cost,0))}</td><td class="num">${money(byEnt.reduce((s,r)=>s+r.debt,0))}</td></tr></tfoot>`:""}
+    </table></div></div>
+
+  <div class="tile"><div class="th"><h2>Status</h2></div><div class="tb">
+    <div class="filters">${STATUSES.map(s=>{const n=A.filter(a=>a.status===s).length; return n?`<button class="btn ghost sm" data-status="${s}"><span class="pill s-${s}">${s}</span>&nbsp; ${n}</button>`:""}).join("")||'<span class="hint">No assets yet.</span>'}
+    ${held.filter(a=>!String(a.unit_no||"").trim()).length?`<button class="btn ghost sm" id="dNoUnit">No unit # &nbsp;<strong>${held.filter(a=>!String(a.unit_no||"").trim()).length}</strong></button>`:""}</div>
+  </div></div>`;
+
+  const dnu=$("#dNoUnit");
+  if(dnu) dnu.onclick=()=>{state.f={q:"",entity:"",cat:"",status:"__held",loc:"",nounit:true}; state.view="assets"; render();};
+
+  $("#view").querySelectorAll("[data-status]").forEach(b=>b.onclick=()=>{state.f={q:"",entity:"",cat:"",status:b.dataset.status,loc:"",nounit:false}; state.view="assets"; render();});
+  $("#view").querySelectorAll("[data-loc]").forEach(b=>b.onclick=()=>{state.f={q:"",entity:"",cat:"",status:"__held",loc:b.dataset.loc,nounit:false}; state.view="assets"; render();});
+  bindOpen();
+}
+
+/* ---------- assets ---------- */
+/* ---------- asset card (narrow screens) ---------- */
+// Every populated field lands on the card so a unit can be read without opening it.
+function assetCard(a){
+  const g=gainOf(a);
+  const cell=(l,v,full)=> (v==null||v==="") ? "" :
+    `<div class="sp${full?" wide":""}"><span class="spl">${esc(l)}</span><span class="spv">${v}</span></div>`;
+  const regDays=daysUntil(a.reg_expires);
+  const reg = a.reg_expires
+    ? `${dt(a.reg_expires)}${regDays!=null && regDays<=60 ? ` <em class="${regDays<0?"neg":"warn"}">${regDays<0?"expired":"in "+regDays+"d"}</em>`:""}`
+    : "";
+  const specs=[
+    cell("Category",esc(a.category)),
+    cell("Entity",esc(a.entity)),
+    cell("Branch",esc(a.location)),
+    cell("Assigned to",esc(a.assigned_to)),
+    cell("VIN",a.vin?`<span class="mono">${esc(a.vin)}</span>`:"",1),
+    cell("Serial",a.serial?`<span class="mono">${esc(a.serial)}</span>`:""),
+    cell("Plate",a.plate?`<span class="mono">${esc(a.plate)}</span>`:""),
+    cell("GVW",a.gvw!=null?`<span class="mono">${Number(a.gvw).toLocaleString("en-US")}</span> lb`:""),
+    cell("Registration",reg),
+    cell("Insurance",a.insured?"Scheduled":`<span class="neg">Not scheduled</span>`),
+    cell("Purchased",a.purchase_date?`<span class="mono">${dt(a.purchase_date)}</span>`:""),
+    cell("Bought from",esc(a.vendor)),
+    cell("Funding",esc(a.funding)),
+    cell("Lender",esc(a.lender)),
+    cell("Loan payoff",a.loan_payoff!=null?`<span class="mono">${money(a.loan_payoff)}</span>`:""),
+    cell("Title",a.title_status?`${esc(a.title_status)}${a.state?` <span class="hint">(${esc(a.state)})</span>`:""}`:""),
+    cell("Title #",a.title_number?`<span class="mono">${esc(a.title_number)}</span>`:""),
+    cell("Origin",esc(a.origin)),
+    cell("Depr. schedule",a.on_dep_schedule?("Yes"+(a.dep_location?" — "+esc(a.dep_location):"")):"No"),
+    cell("Title held by",esc(a.title_note),1),
+    cell("Notes",esc(a.notes),1),
+    cell("Document",a.doc_url?`<a href="${esc(a.doc_url)}" target="_blank" rel="noopener">Open link</a>`:"",1)
+  ].join("");
+  const gone = a.status==="Sold" || a.status==="Disposed";
+  return `<div class="acard${gone?" gone":""}" data-open="${a.id}">
+    ${gone?`<div class="ac-ribbon">${a.status==="Sold"?"SOLD":"DISPOSED"}</div>`:""}
+    <div class="ac-top">
+      ${a.unit_no?`<span class="ac-unit mono">${esc(a.unit_no)}</span>`:`<span class="ac-unit none">no unit&nbsp;#</span>`}
+      <span class="pill s-${esc(a.status||"Active")}">${esc(a.status||"Active")}</span>
+    </div>
+    <div class="ac-name">${esc(a.name||"(unnamed)")}</div>
+    ${(a.year||a.make||a.model)?`<div class="ac-sub">${esc([a.year,a.make,a.model].filter(Boolean).join(" "))}</div>`:""}
+    <div class="ac-specs">${specs}</div>
+    <div class="ac-foot">
+      <span class="ac-money mono">${money(a.purchase_price)}<span class="ac-lbl">purchase</span></span>
+      ${a.sale_price!=null?`<span class="ac-money mono">${money(a.sale_price)}<span class="ac-lbl">sell</span></span>`:""}
+      ${g!=null?`<span class="ac-money mono ${g>=0?"pos":"neg"}">${signed(g)}<span class="ac-lbl">spread</span></span>`:""}
+    </div>
+  </div>`;
+}
+
+function vAssets(){
+  const rows=filtered();
+  const cats=[...new Set(CATEGORIES.concat(state.assets.map(a=>a.category).filter(Boolean)))];
+  const ents=[...new Set(ENTITIES.concat(state.assets.map(a=>a.entity).filter(Boolean)))];
+  const cost=rows.reduce((s,a)=>s+(Number(a.purchase_price)||0),0);
+  const sale=rows.reduce((s,a)=>s+(Number(a.sale_price)||0),0);
+  const H=(k,l,r)=>`<th data-k="${k}"${r?' style="text-align:right"':''}>${l}${state.sort.k===k?(state.sort.dir>0?" ▲":" ▼"):""}</th>`;
+
+  $("#view").innerHTML = banner()+`
+  <div class="tile"><div class="th">
+    <div class="filters" style="flex:1">
+      <input type="text" id="fq" placeholder="Search unit #, name, VIN, serial, plate…" value="${esc(state.f.q)}">
+      <select id="fent">${opts(ents,state.f.entity,"All entities")}</select>
+      <select id="floc">${opts(LOCATIONS,state.f.loc,"All branches")}</select>
+      <select id="fst"><option value="">All statuses</option><option value="__held"${state.f.status==="__held"?" selected":""}>Held</option>${opts(STATUSES,state.f.status)}</select>
+      <button class="btn ${state.f.status==="Sold"?"":"ghost"} sm" id="fsold">Sold</button>
+      <button class="btn ${state.f.nounit?"":"ghost"} sm" id="fnounit">No unit #</button>
+      <button class="btn ghost sm" id="fclear">Clear</button>
+    </div>
+    <button class="btn" id="newAsset">+ New asset</button>
+    <div class="catfilter" id="fcats">${cats.map(c=>`<button type="button" class="cat sm${state.f.cat===c?" on":""}" data-c="${esc(c)}">${esc(c)}</button>`).join("")}</div>
+  </div>
+  <div class="tb flush">
+    <div class="acards">${rows.map(a=>assetCard(a)).join("") || `<div class="empty">No assets match these filters.</div>`}
+    ${rows.length?`<div class="ac-total"><span>${rows.length} asset${rows.length===1?"":"s"}</span><span class="mono">${money(cost)}</span></div>`:""}
+    </div>
+    <table class="responsive atable"><thead><tr>
+      ${H("unit_no","Unit #")}${H("name","Asset")}${H("category","Category")}${H("entity","Entity")}${H("location","Branch")}${H("status","Status")}${H("purchase_date","Purchased")}${H("purchase_price","Purchase",1)}${H("sale_price","Sell",1)}
+    </tr></thead><tbody>
+    ${rows.map(a=>{const g=gainOf(a);return `<tr class="clickable" data-open="${a.id}">
+      <td data-l="Unit #" class="mono">${a.unit_no?esc(a.unit_no):'<span class="hint">—</span>'}</td>
+      <td data-l="Asset"><strong>${esc(a.name||"(unnamed)")}</strong>${(a.make||a.model||a.year)?`<div class="hint">${esc([a.year,a.make,a.model].filter(Boolean).join(" "))}</div>`:""}</td>
+      <td data-l="Category">${esc(a.category||"—")}</td>
+      <td data-l="Entity">${esc(a.entity||"—")}</td>
+      <td data-l="Branch">${esc(a.location||"—")}</td>
+      <td data-l="Status"><span class="pill s-${esc(a.status||"Active")}">${esc(a.status||"Active")}</span></td>
+      <td data-l="Purchased" class="mono">${dt(a.purchase_date)}</td>
+      <td data-l="Purchase" class="num">${money(a.purchase_price)}</td>
+      <td data-l="Sell" class="num">${money(a.sale_price)}${g!=null?`<div class="hint ${g>=0?"pos":"neg"}">${signed(g)}</div>`:""}</td></tr>`}).join("")
+      || `<tr><td colspan="9" class="empty">No assets match these filters.</td></tr>`}
+    </tbody>
+    ${rows.length?`<tfoot><tr><td colspan="7">${rows.length} asset${rows.length===1?"":"s"}</td><td class="num">${money(cost)}</td><td class="num">${sale?money(sale):"—"}</td></tr></tfoot>`:""}
+    </table></div></div>`;
+
+  const on=(id,ev,fn)=>{const el=$("#"+id); if(el) el.addEventListener(ev,fn);};
+  on("fq","input",e=>{state.f.q=e.target.value; clearTimeout(window._t); window._t=setTimeout(()=>{vAssets(); const i=$("#fq"); i.focus(); i.setSelectionRange(i.value.length,i.value.length);},180);});
+  on("fent","change",e=>{state.f.entity=e.target.value; vAssets();});
+  $("#fcats").querySelectorAll(".cat").forEach(b=>b.onclick=()=>{
+    state.f.cat = (state.f.cat===b.dataset.c) ? "" : b.dataset.c;   // tap again to clear
+    vAssets();
+  });
+  on("floc","change",e=>{state.f.loc=e.target.value; vAssets();});
+  on("fst","change",e=>{state.f.status=e.target.value; vAssets();});
+  on("fclear","click",()=>{state.f={q:"",entity:"",cat:"",status:"",loc:"",nounit:false}; vAssets();});
+  on("fnounit","click",()=>{state.f.nounit=!state.f.nounit; vAssets();});
+  on("fsold","click",()=>{state.f.status = state.f.status==="Sold" ? "" : "Sold"; vAssets();});
+  on("newAsset","click",()=>openAsset(null));
+  $("#view").querySelectorAll("th[data-k]").forEach(th=>th.onclick=()=>{
+    const k=th.dataset.k;
+    state.sort = state.sort.k===k ? {k,dir:-state.sort.dir} : {k,dir:1};
+    vAssets();
+  });
+  bindOpen();
+}
+
+/* ---------- appendix (full roster) ---------- */
+function vList(){
+  const A=[...state.assets].sort((a,b)=>unitSortKey(a.unit_no).localeCompare(unitSortKey(b.unit_no)));
+  const groups=LOCATIONS.map(l=>({k:l,rows:A.filter(a=>a.location===l)}))
+    .concat([{k:"Unassigned branch",rows:A.filter(a=>!LOCATIONS.includes(a.location))}])
+    .filter(g=>g.rows.length);
+  const inHand=A.filter(a=>a.title_status==="In Hand").length;
+  const missing=A.filter(a=>a.title_status==="Missing").length;
+  const oldSheet=A.filter(a=>a.origin==="Old Sheet").length;
+
+  const block=g=>{
+    const cost=g.rows.reduce((s,a)=>s+(Number(a.purchase_price)||0),0);
+    return `<div class="apx-group">
+      <div class="apx-head"><h3>${esc(g.k)}</h3><span class="mono">${g.rows.length} units · ${money(cost)}</span></div>
+      <table class="apx"><thead><tr>
+        <th>Unit #</th><th>Asset</th><th>Year / Make / Model</th><th>Cat</th><th>Entity</th>
+        <th>VIN / Serial</th><th>Plate</th><th>Status</th><th>Title</th>
+        <th style="text-align:right">Purchase</th><th style="text-align:right">Sell</th>
+      </tr></thead><tbody>
+      ${g.rows.map(a=>`<tr>
+        <td class="mono b">${esc(a.unit_no||"—")}</td>
+        <td class="b">${esc(a.name||"")}</td>
+        <td>${esc([a.year,a.make,a.model].filter(Boolean).join(" "))||"—"}</td>
+        <td>${esc(a.category||"—")}</td>
+        <td>${esc(a.entity||"—")}</td>
+        <td class="mono sm">${esc(a.vin||a.serial||"—")}</td>
+        <td class="mono sm">${esc(a.plate||"—")}</td>
+        <td>${esc(a.status||"")}</td>
+        <td>${esc(a.title_status||"—")}${a.title_number?`<div class="apx-note mono">${esc(a.state?a.state+" ":"")}${esc(a.title_number)}</div>`:""}${a.origin==="Old Sheet"?`<div class="apx-note" style="color:var(--red)">Old Sheet</div>`:""}${a.title_note?`<div class="apx-note">${esc(a.title_note)}</div>`:""}</td>
+        <td>${a.on_dep_schedule?esc(a.dep_location||"Yes"):"—"}</td>
+        <td class="num">${money(a.purchase_price)}</td>
+        <td class="num">${money(a.sale_price)}</td></tr>`).join("")}
+      </tbody></table></div>`;
+  };
+
+  $("#view").innerHTML = banner()+`
+  <div class="tile"><div class="th">
+    <h2>Appendix — full asset list</h2>
+    <span class="spacer"></span>
+    <span class="hint">${A.length} records · generated ${today()}</span>
+    <button class="btn ghost sm" id="apxPrint">Print / PDF</button>
+    <button class="btn ghost sm" id="apxCsv">CSV</button>
+  </div>
+  <div class="tb">
+    <p class="hint" style="margin-top:0"><strong>${inHand}</strong> titles in hand · <strong style="color:var(--amber)">${missing}</strong> missing${oldSheet?` · <strong style="color:var(--red)">${oldSheet}</strong> from the old sheet still to track down`:""}.</p>
+    <div id="apxBody">${groups.map(block).join("")}</div>
+  </div></div>`;
+
+  $("#apxPrint").onclick=()=>window.print();
+  $("#apxCsv").onclick=()=>dl("asset_appendix.csv",toCSV(A,EXPORT_COLS));
+}
+
+/* ---------- import / export ---------- */
+const IMPORT_FIELDS=[
+  ["unit_no","Unit #"],["name","Asset name"],["category","Category"],["make","Make"],["model","Model"],["year","Year"],
+  ["vin","VIN"],["serial","Serial #"],["plate","Plate"],["entity","Entity"],["location","Branch"],["status","Status"],
+  ["assigned_to","Assigned to"],["purchase_date","Purchase date"],["purchase_price","Purchase price"],["sale_price","Sell price"],
+  ["vendor","Purchased from"],["funding","Funding"],["lender","Lender"],["loan_payoff","Loan payoff"],
+  ["reg_expires","Registration expires"],["title_status","Title status"],["title_note","Title held by / note"],["state","Title state"],["title_number","Title number"],["gvw","GVW"],["on_dep_schedule","On depr. schedule"],["dep_location","Depr. schedule line"],["origin","Origin"],["notes","Notes"],["doc_url","Document link"]
+];
+const EXPORT_COLS=["unit_no","name","category","make","model","year","vin","serial","plate","entity","location","status","assigned_to","purchase_date","purchase_price","sale_price","vendor","funding","lender","loan_payoff","reg_expires","insured","title_status","title_note","state","title_number","gvw","on_dep_schedule","dep_location","origin","notes","doc_url"];
+
+function vData(){
+  $("#view").innerHTML = banner()+`
+  <div class="tile"><div class="th"><h2>Import from Excel / CSV</h2></div><div class="tb">
+    <p class="hint" style="margin-top:0">Save the sheet as CSV, drop it here, map the columns. Unmapped columns are ignored. Rows import as new records — this never updates existing ones.</p>
+    <input type="file" id="csvFile" accept=".csv,text/csv">
+    <div id="mapArea"></div>
+  </div></div>
+  <div class="tile"><div class="th"><h2>Export</h2></div><div class="tb">
+    <div class="filters">
+      <button class="btn ghost" id="expAssets">Assets CSV (${state.assets.length})</button>
+      <button class="btn ghost" id="expTemplate">Blank import template</button>
+    </div>
+    <p class="hint">Exports the full table — filters are not applied.</p>
+  </div></div>`;
+
+  $("#csvFile").addEventListener("change",e=>{
+    const f=e.target.files[0]; if(!f) return;
+    const rd=new FileReader();
+    rd.onload=()=>{ try{ state.imp=parseCSV(rd.result); drawMap(); }catch(err){ toast("Could not read that file",1); } };
+    rd.readAsText(f);
+  });
+  $("#expAssets").onclick=()=>dl("assets.csv",toCSV(state.assets,EXPORT_COLS));
+  $("#expTemplate").onclick=()=>dl("asset_import_template.csv",IMPORT_FIELDS.map(f=>f[1]).join(",")+"\n");
+}
+function drawMap(){
+  const {head,rows}=state.imp;
+  $("#mapArea").innerHTML=`
+  <fieldset class="fs" style="margin-top:14px"><legend>Column mapping — ${rows.length} row${rows.length===1?"":"s"}</legend>
+  <div class="grid2">${head.map((h,i)=>{
+    const g=guessField(h);
+    return `<label class="f"><span>${esc(h)||"(blank header)"}</span>
+      <select data-col="${i}"><option value="">— ignore —</option>${IMPORT_FIELDS.map(f=>`<option value="${f[0]}"${f[0]===g?" selected":""}>${f[1]}</option>`).join("")}</select>
+      <span class="hint">e.g. ${esc((rows[0]||[])[i]||"")}</span></label>`;
+  }).join("")}</div>
+  <div class="filters" style="margin-bottom:12px"><button class="btn" id="runImp">Import ${rows.length} rows</button><span class="hint">Rows without an asset name are skipped.</span></div>
+  </fieldset>`;
+  $("#runImp").onclick=doImport;
+}
+function guessField(h){
+  const s=String(h||"").toLowerCase().replace(/[^a-z]/g,"");
+  const m={unit:"unit_no",unitno:"unit_no",unitnumber:"unit_no",unitid:"unit_no",truckno:"unit_no",trucknumber:"unit_no",
+    tag:"unit_no",tagno:"unit_no",assetno:"unit_no",assetnumber:"unit_no",assetid:"unit_no",dotnumber:"unit_no",fleetno:"unit_no",fleetnumber:"unit_no",
+    name:"name",description:"name",asset:"name",assetname:"name",equipment:"name",
+    category:"category",type:"category",make:"make",manufacturer:"make",model:"model",year:"year",
+    vin:"vin",serial:"serial",serialno:"serial",serialnumber:"serial",plate:"plate",license:"plate",licenseplate:"plate",
+    entity:"entity",company:"entity",owner:"entity",location:"location",branch:"location",site:"location",yard:"location",
+    status:"status",assignedto:"assigned_to",operator:"assigned_to",driver:"assigned_to",
+    purchasedate:"purchase_date",datepurchased:"purchase_date",acquired:"purchase_date",acquireddate:"purchase_date",
+    purchaseprice:"purchase_price",cost:"purchase_price",price:"purchase_price",acquisitioncost:"purchase_price",purchasecost:"purchase_price",
+    sellprice:"sale_price",saleprice:"sale_price",soldfor:"sale_price",soldprice:"sale_price",proceeds:"sale_price",
+    vendor:"vendor",purchasedfrom:"vendor",supplier:"vendor",
+    funding:"funding",lender:"lender",bank:"lender",payoff:"loan_payoff",loanbalance:"loan_payoff",balance:"loan_payoff",
+    registration:"reg_expires",regexpires:"reg_expires",tagexpires:"reg_expires",
+    title:"title_status",titlestatus:"title_status",titleheldby:"title_note",titlelocation:"title_note",titlenote:"title_note",
+    state:"state",titlenumber:"title_number",titleno:"title_number",gvw:"gvw",grossvehicleweight:"gvw",
+    ondeprsched:"on_dep_schedule",ondeprschedule:"on_dep_schedule",deprsched:"on_dep_schedule",
+    deprloc:"dep_location",deprlocation:"dep_location",deprline:"dep_location",origin:"origin",
+    notes:"notes",comments:"notes",comment:"notes",link:"doc_url",url:"doc_url"};
+  return m[s]||"";
+}
+async function doImport(){
+  const map=[...document.querySelectorAll("#mapArea select")].map(s=>s.value);
+  if(!map.includes("name")){ toast("Map one column to Asset name",1); return; }
+  const out=[];
+  state.imp.rows.forEach(r=>{
+    const o={status:"Active",insured:false};
+    map.forEach((f,i)=>{
+      if(!f) return;
+      let v=(r[i]||"").trim();
+      if(v==="") return;
+      if(["purchase_price","sale_price","loan_payoff","year","gvw"].includes(f)) v=num(v.replace(/[$,]/g,""));
+      if(f==="on_dep_schedule") v=/^(yes|y|x|true|1)$/i.test(v);
+      if(["purchase_date","reg_expires"].includes(f)) v=normDate(v);
+      if(f==="status" && !STATUSES.includes(v)) v="Active";
+      if(f==="location" && !LOCATIONS.includes(v)) return;
+      o[f]=v;
+    });
+    if(o.name) out.push(o);
+  });
+  if(!out.length){ toast("Nothing to import",1); return; }
+  try{ const n=await DB.bulk(out); toast(n+" assets imported"); state.imp=null; state.view="assets"; render(); }
+  catch(e){ toast(e.message,1); }
+}
+function normDate(v){
+  const s=String(v).trim();
+  if(/^\d{4}-\d{2}-\d{2}/.test(s)) return s.slice(0,10);
+  const m=s.match(/^(\d{1,2})[\/\-](\d{1,2})[\/\-](\d{2,4})$/);
+  if(m){ let y=m[3]; if(y.length===2) y="20"+y; return `${y}-${String(m[1]).padStart(2,"0")}-${String(m[2]).padStart(2,"0")}`; }
+  return null;
+}
+function parseCSV(txt){
+  const rows=[]; let row=[],cur="",q=false;
+  txt=txt.replace(/\r\n/g,"\n").replace(/\r/g,"\n");
+  for(let i=0;i<txt.length;i++){
+    const c=txt[i];
+    if(q){ if(c==='"'){ if(txt[i+1]==='"'){cur+='"';i++;} else q=false; } else cur+=c; }
+    else if(c==='"') q=true;
+    else if(c===","){ row.push(cur); cur=""; }
+    else if(c==="\n"){ row.push(cur); rows.push(row); row=[]; cur=""; }
+    else cur+=c;
+  }
+  if(cur!==""||row.length){ row.push(cur); rows.push(row); }
+  const clean=rows.filter(r=>r.some(c=>String(c).trim()!==""));
+  if(!clean.length) throw new Error("empty");
+  return {head:clean[0].map(h=>h.trim()), rows:clean.slice(1)};
+}
+function toCSV(arr,cols){
+  const q=v=>{ v=(v==null?"":String(v)); return /[",\n]/.test(v)?'"'+v.replace(/"/g,'""')+'"':v; };
+  return cols.join(",")+"\n"+arr.map(o=>cols.map(c=>q(o[c])).join(",")).join("\n")+"\n";
+}
+function dl(name,text){
+  const b=new Blob([text],{type:"text/csv;charset=utf-8"});
+  const u=URL.createObjectURL(b),a=document.createElement("a");
+  a.href=u; a.download=name; a.click(); setTimeout(()=>URL.revokeObjectURL(u),1500);
+}
+
+const TEXT_FIELDS=["unit_no","name","category","make","model","vin","serial","plate","entity","location","status","assigned_to","vendor","funding","lender","title_status","title_note","state","title_number","dep_location","origin","notes","doc_url"];
+const NUM_FIELDS=["year","purchase_price","sale_price","loan_payoff","gvw"];
+const DATE_FIELDS=["purchase_date","reg_expires"];
+
+function readForm(){
+  const g=id=>{const el=$("#f_"+id); return el?el.value:undefined;};
+  const a=Object.assign({},state.sel);
+  TEXT_FIELDS.forEach(k=>{const v=g(k); if(v!==undefined) a[k]=v.trim?v.trim():v;});
+  NUM_FIELDS.forEach(k=>{const v=g(k); if(v!==undefined) a[k]=num(v);});
+  DATE_FIELDS.forEach(k=>{const v=g(k); if(v!==undefined) a[k]=v||null;});
+  const ins=g("insured"); if(ins!==undefined) a.insured=ins==="true";
+  const ds=g("on_dep_schedule"); if(ds!==undefined) a.on_dep_schedule=ds==="true";
+  return a;
+}
+function formDirty(){
+  if(!state.sel || !$("#f_name")) return false;
+  const cur=readForm(), base=state.sel;
+  const same=v=>(v==null||v==="")?"":String(v);
+  return TEXT_FIELDS.concat(NUM_FIELDS,DATE_FIELDS,["insured","on_dep_schedule"]).some(k=>same(cur[k])!==same(base[k]));
+}
+function confirmDiscard(){
+  return !formDirty() || confirm("You have unsaved changes on this asset. Discard them?");
+}
+
+/* ---------- chiclet pickers ---------- */
+// One selection out of a fixed list. Click the lit one to clear.
+function mountChiclets(hidId,wrapId,options,opt){
+  const hid=$("#"+hidId), wrap=$("#"+wrapId);
+  const known=new Set(options);
+  let stray=[];
+  if(opt && opt.strayFrom){
+    stray=[...new Set(state.assets.map(a=>a[opt.strayFrom]).filter(c=>c && !known.has(c)))];
+    if(hid.value && !known.has(hid.value) && !stray.includes(hid.value)) stray.push(hid.value);
+  }
+  const row=list=>`<div class="cats">${list.map(c=>`<button type="button" class="cat${c===hid.value?" on":""}" data-c="${esc(c)}">${esc(c)}</button>`).join("")}</div>`;
+  function draw(){
+    wrap.innerHTML = row(options) +
+      (stray.length? `<div class="catgroup" style="margin-top:7px"><span class="catlbl">Imported</span>${row(stray)}</div>`:"");
+    wrap.querySelectorAll(".cat").forEach(b=>b.onclick=()=>{
+      hid.value = (b.dataset.c===hid.value) ? "" : b.dataset.c;
+      draw();
+      if(opt && opt.onChange) opt.onChange(hid.value);
+    });
+  }
+  draw();
+}
+
+/* ---------- unit # field ---------- */
+// Two modes. Locked: shows the number as a plate, no keystroke can change it.
+// Edit: branch prefix is fixed, only the digits are typed, open numbers offered as chips.
+function openNumbers(branch,exceptId,count){
+  const pre=prefixFor(branch);
+  if(!pre) return [];
+  const taken=takenNums(pre,exceptId);
+  const out=[];
+  for(let n=UNIT_FLOOR; out.length<count && n<UNIT_FLOOR+500; n++) if(!taken.has(n)) out.push(n);
+  const high=(taken.size? Math.max(...taken):UNIT_FLOOR-1)+1;
+  if(!out.includes(high)) out.push(high);
+  return out.slice(0,count+1);
+}
+function mountUnitField(id){
+  const hid=$("#f_unit_no"), wrap=$("#unitWrap"), msg=$("#unitMsg"), bSel=$("#f_location");
+  let mode = hid.value.trim() ? "locked" : "edit";
+  let raw  = false;   // free-text fallback for legacy formats
+
+  function branchPrefix(){ return prefixFor(bSel.value); }
+  function say(t,bad){ msg.textContent=t||""; msg.className="hint"+(bad?" neg":""); }
+  function validate(){
+    const v=hid.value.trim();
+    if(!v){ say("No unit number — normal for shop equipment."); return; }
+    const dup=unitTaken(v,id);
+    if(dup){ say("Already on "+(dup.name||"another asset"),1); return; }
+    const p=parseUnit(v), want=branchPrefix();
+    if(want && p && p.pre && p.pre!==want.toUpperCase()){ say(p.pre+" isn't the "+bSel.value+" prefix ("+want+")."); return; }
+    say("");
+  }
+  function commit(v){ hid.value=v; validate(); }
+
+  function draw(){
+    if(mode==="locked"){
+      wrap.innerHTML=`<div class="unitrow">
+        <span class="unitplate mono">${esc(hid.value)}</span>
+        <button type="button" class="btn ghost sm" id="uEdit">Change</button></div>`;
+      $("#uEdit").onclick=()=>{ mode="edit"; draw(); };
+      validate(); return;
+    }
+    const pre=branchPrefix();
+    const cur=parseUnit(hid.value);
+    const digits=(cur && cur.n!=null)? cur.n : "";
+    if(raw){
+      wrap.innerHTML=`<div class="unitrow">
+        <input type="text" id="uRaw" value="${esc(hid.value)}" placeholder="SMI 107" style="flex:1;font-family:var(--mono)">
+        <button type="button" class="btn ghost sm" id="uStd">Use ${esc(pre||"branch")} format</button></div>`;
+      const r=$("#uRaw");
+      r.oninput=()=>commit(r.value.trim());
+      $("#uStd").onclick=()=>{ raw=false; draw(); };
+      validate(); return;
+    }
+    const chips=openNumbers(bSel.value,id,4);
+    wrap.innerHTML=`<div class="unitrow">
+        <span class="prefixchip">${esc(pre|| "—")}</span>
+        <input type="number" id="uNum" value="${digits}" placeholder="107" ${pre?"":"disabled"}>
+        ${hid.value?`<button type="button" class="btn ghost sm" id="uLock">Done</button>`:""}
+      </div>
+      ${pre? `<div class="openchips"><span class="hint" style="align-self:center">Open:</span>
+        ${chips.map(n=>`<button type="button" class="oc" data-n="${n}">${esc(fmtUnit(pre,n))}</button>`).join("")}</div>`
+        : `<div class="hint" style="margin-top:6px">Pick a branch to number this asset.</div>`}
+      <div style="margin-top:6px"><a href="#" id="uRawLink" class="hint">Enter a non-standard number</a></div>`;
+
+    const nIn=$("#uNum");
+    if(nIn){
+      nIn.oninput=()=>{
+        const d=nIn.value.trim();
+        commit(d===""? "" : fmtUnit(branchPrefix(),parseInt(d,10)));
+      };
+    }
+    wrap.querySelectorAll(".oc").forEach(b=>b.onclick=()=>{
+      const n=parseInt(b.dataset.n,10);
+      if(nIn) nIn.value=n;
+      commit(fmtUnit(branchPrefix(),n));
+      wrap.querySelectorAll(".oc").forEach(x=>x.classList.remove("on"));
+      b.classList.add("on");
+    });
+    const lk=$("#uLock"); if(lk) lk.onclick=()=>{ if(hid.value.trim()){ mode="locked"; draw(); } };
+    $("#uRawLink").onclick=e=>{ e.preventDefault(); raw=true; draw(); };
+    validate();
+  }
+
+  bSel.addEventListener("change",()=>{
+    if(mode==="edit" && !raw){
+      const cur=parseUnit(hid.value);
+      if(cur && cur.n!=null) commit(fmtUnit(branchPrefix(),cur.n));  // reprefix, keep digits
+      draw();
+    } else validate();
+  });
+  draw();
+}
+
+/* ---------- record navigation ---------- */
+function navList(){
+  const f=filtered();
+  return f.length? f : state.assets;
+}
+function setupNav(id){
+  const prev=$("#navPrev"), next=$("#navNext"), pos=$("#navPos");
+  const list=id? navList() : [];
+  const i=id? list.findIndex(x=>x.id===id) : -1;
+  const show = i>-1 && list.length>1;
+  [prev,next].forEach(b=>b.style.display = show? "" : "none");
+  pos.textContent = show? (i+1)+" of "+list.length : "";
+  if(!show) return;
+  prev.disabled = i<=0;
+  next.disabled = i>=list.length-1;
+  prev.onclick=()=>{ if(i>0 && confirmDiscard()) openAsset(list[i-1].id); };
+  next.onclick=()=>{ if(i<list.length-1 && confirmDiscard()) openAsset(list[i+1].id); };
+}
+function bindOpen(){
+  $("#view").querySelectorAll("[data-open]").forEach(el=>el.addEventListener("click",e=>{e.preventDefault(); openAsset(el.dataset.open);}));
+}
+function closeSheet(force){ if(!force && !confirmDiscard()) return; $("#sheet").classList.remove("on"); $("#scrim").classList.remove("on"); state.sel=null; }
+$("#sheetX").onclick=()=>closeSheet(); $("#scrim").onclick=()=>closeSheet();
+document.addEventListener("keydown",e=>{
+  if(!$("#sheet").classList.contains("on")) return;
+  if(e.key==="Escape"){ closeSheet(); return; }
+  const typing=/^(INPUT|TEXTAREA|SELECT)$/.test((e.target.tagName||""));
+  if(typing || e.metaKey || e.ctrlKey || e.altKey) return;
+  if(e.key==="ArrowLeft"){ const b=$("#navPrev"); if(b && b.offsetParent && !b.disabled) b.click(); }
+  if(e.key==="ArrowRight"){ const b=$("#navNext"); if(b && b.offsetParent && !b.disabled) b.click(); }
+});
+
+function openAsset(id){
+  const a = id ? Object.assign({},byId(id)) : {status:"Active",insured:false,funding:"Cash",entity:"SMI",purchase_date:today()};
+  state.sel=a;
+  $("#sheetTitle").textContent = id ? ((a.unit_no?a.unit_no+" — ":"")+(a.name||"Asset")) : "New asset";
+  const ents=[...new Set(ENTITIES.concat(state.assets.map(x=>x.entity).filter(Boolean)))];
+  const g=gainOf(a);
+
+  $("#sheetBody").innerHTML=`
+  <fieldset class="fs"><legend>Identification</legend>
+    <div class="grid2">
+      <div class="f"><span class="flbl">Unit #</span>
+        <input type="hidden" id="f_unit_no" value="${esc(a.unit_no||"")}">
+        <div id="unitWrap"></div>
+        <span class="hint" id="unitMsg"></span>
+      </div>
+      <label class="f"><span>Status</span><select id="f_status">${opts(STATUSES,a.status||"Active")}</select></label>
+    </div>
+    <label class="f"><span>Asset name *</span><input type="text" id="f_name" value="${esc(a.name||"")}" placeholder="Freightliner Flatbed #1"></label>
+    <div class="f"><span class="flbl">Category</span>
+      <input type="hidden" id="f_category" value="${esc(a.category||"")}">
+      <div id="catWrap"></div>
+    </div>
+    <div class="grid2">
+      <label class="f"><span>Make</span><input type="text" id="f_make" value="${esc(a.make||"")}"></label>
+      <label class="f"><span>Model</span><input type="text" id="f_model" value="${esc(a.model||"")}"></label>
+    </div>
+    <div class="grid3">
+      <label class="f"><span>Year</span><input type="number" id="f_year" value="${a.year??""}"></label>
+      <label class="f"><span>VIN</span><input type="text" id="f_vin" value="${esc(a.vin||"")}"></label>
+      <label class="f"><span>Serial #</span><input type="text" id="f_serial" value="${esc(a.serial||"")}"></label>
+    </div>
+  </fieldset>
+
+  <fieldset class="fs" id="priceFs"><legend>Price</legend>
+    <div class="grid3">
+      <label class="f"><span>Purchase date</span><input type="date" id="f_purchase_date" value="${a.purchase_date||""}"></label>
+      <label class="f"><span>Purchase price</span><input type="number" step="0.01" id="f_purchase_price" value="${a.purchase_price??""}"></label>
+      <label class="f"><span>Sell price</span><input type="number" step="0.01" id="f_sale_price" value="${a.sale_price??""}"></label>
+    </div>
+    ${g!=null?`<p class="hint" style="margin-top:-2px">Sell vs. purchase: <strong class="${g>=0?"pos":"neg"}">${signed(g)}</strong> — before depreciation. Book gain/loss comes from GP.</p>`:""}
+    <label class="f"><span>Purchased from</span><input type="text" id="f_vendor" value="${esc(a.vendor||"")}"></label>
+  </fieldset>
+
+  <fieldset class="fs"><legend>Assignment</legend>
+    <div class="grid2">
+      <label class="f"><span>Owning entity</span><select id="f_entity">${opts(ents,a.entity,"—")}</select></label>
+      <label class="f"><span>Branch</span><select id="f_location">${opts(LOCATIONS,a.location,"—")}</select></label>
+    </div>
+    <div class="grid3">
+      <label class="f"><span>Assigned to</span><input type="text" id="f_assigned_to" value="${esc(a.assigned_to||"")}"></label>
+      <label class="f"><span>Plate</span><input type="text" id="f_plate" value="${esc(a.plate||"")}"></label>
+      <label class="f"><span>GVW (lb)</span><input type="number" id="f_gvw" value="${a.gvw??""}"></label>
+    </div>
+    <label class="f"><span>Registration expires</span><input type="date" id="f_reg_expires" value="${a.reg_expires||""}"></label>
+    <label class="f"><span>Insurance</span><select id="f_insured"><option value="true"${a.insured?" selected":""}>Scheduled on policy</option><option value="false"${!a.insured?" selected":""}>Not scheduled</option></select></label>
+  </fieldset>
+
+  <fieldset class="fs"><legend>Financing</legend>
+    <div class="grid3">
+      <label class="f"><span>Funding</span><select id="f_funding">${opts(FUNDING,a.funding||"Cash")}</select></label>
+      <label class="f"><span>Lender</span><input type="text" id="f_lender" value="${esc(a.lender||"")}"></label>
+      <label class="f"><span>Loan payoff</span><input type="number" step="0.01" id="f_loan_payoff" value="${a.loan_payoff??""}"></label>
+    </div>
+  </fieldset>
+
+  <fieldset class="fs"><legend>Title</legend>
+    <div class="f"><span class="flbl">Where the title is</span>
+      <input type="hidden" id="f_title_status" value="${esc(a.title_status||"")}">
+      <div id="titleWrap"></div>
+    </div>
+    <div class="grid3">
+      <label class="f"><span>Title state</span><input type="text" id="f_state" value="${esc(a.state||"")}" placeholder="ND"></label>
+      <label class="f"><span>Title number</span><input type="text" id="f_title_number" value="${esc(a.title_number||"")}"></label>
+      <label class="f"><span>Origin</span><select id="f_origin">${opts(["Physical Title","Old Sheet"],a.origin,"—")}</select></label>
+    </div>
+    <label class="f"><span>Held by / note</span><input type="text" id="f_title_note" value="${esc(a.title_note||"")}" placeholder="Bell Bank — released on payoff"></label>
+  </fieldset>
+
+  <fieldset class="fs"><legend>Depreciation schedule</legend>
+    <div class="grid2">
+      <label class="f"><span>On schedule</span><select id="f_on_dep_schedule"><option value="true"${a.on_dep_schedule?" selected":""}>Yes</option><option value="false"${!a.on_dep_schedule?" selected":""}>No</option></select></label>
+      <label class="f"><span>Schedule line</span><input type="text" id="f_dep_location" value="${esc(a.dep_location||"")}" placeholder="Line 20"></label>
+    </div>
+  </fieldset>
+
+  <fieldset class="fs"><legend>Notes</legend>
+    <label class="f"><span>Notes</span><textarea id="f_notes" rows="3">${esc(a.notes||"")}</textarea></label>
+    <label class="f"><span>Document link</span><input type="text" id="f_doc_url" value="${esc(a.doc_url||"")}" placeholder="SharePoint / OneDrive URL"></label>
+  </fieldset>`;
+
+  const isSold = a.status==="Sold";
+  $("#sheetFoot").innerHTML=`<button class="btn" id="saveA">${id?"Save changes":"Create asset"}</button>
+    ${id?`<button class="btn ${isSold?"ghost":"warn"}" id="soldA">${isSold?"Return to active":"Mark sold"}</button>`:""}
+    <button class="btn ghost" id="cancelA">Cancel</button>
+    <span class="spacer"></span>
+    ${id?`<button class="btn danger" id="delA">Delete</button>`:""}`;
+  $("#saveA").onclick=saveSheet;
+  $("#cancelA").onclick=()=>closeSheet();
+  const soldBtn=$("#soldA");
+  if(soldBtn) soldBtn.onclick=()=>{
+    const st=$("#f_status"), sp=$("#f_sale_price"), fs=$("#priceFs");
+    if(st.value==="Sold"){
+      st.value="Active";
+      toast("Back to Active — Save to confirm");
+    } else {
+      st.value="Sold";
+      fs.scrollIntoView({block:"center",behavior:"smooth"});
+      fs.classList.add("flash"); setTimeout(()=>fs.classList.remove("flash"),1400);
+      sp.focus();
+      toast("Enter the sell price, then Save");
+    }
+    soldBtn.textContent = st.value==="Sold" ? "Return to active" : "Mark sold";
+    soldBtn.className = "btn "+(st.value==="Sold" ? "ghost" : "warn");
+  };
+  const stSel=$("#f_status");
+  if(soldBtn && stSel) stSel.addEventListener("change",()=>{
+    soldBtn.textContent = stSel.value==="Sold" ? "Return to active" : "Mark sold";
+    soldBtn.className = "btn "+(stSel.value==="Sold" ? "ghost" : "warn");
+  });
+
+  mountUnitField(id);
+  mountChiclets("f_category","catWrap",CATEGORIES,{strayFrom:"category"});
+  mountChiclets("f_title_status","titleWrap",TITLE_STATUSES,{strayFrom:"title_status"});
+
+  if(id) $("#delA").onclick=async()=>{
+    if(!confirm("Delete this asset? This cannot be undone.")) return;
+    try{ await DB.del(id); closeSheet(true); toast("Asset deleted"); render(); }catch(e){ toast(e.message,1); }
+  };
+  setupNav(id);
+  $("#sheet").classList.add("on"); $("#scrim").classList.add("on");
+  $("#sheetBody").scrollTop=0;
+}
+async function saveSheet(){
+  const a=readForm();
+  if(!a.name){ toast("Asset name is required",1); return; }
+  if(a.unit_no){
+    const dup=unitTaken(a.unit_no,a.id);
+    if(dup && !confirm("Unit "+a.unit_no+" is already on "+(dup.name||"another asset")+". Save anyway?")) return;
+  }
+  const isNew=!a.id;
+  try{
+    await DB.save(a);
+    if(LIVE) await DB.load();
+    closeSheet(true); toast(isNew?"Asset created":"Saved"); render();
+  }catch(e){ toast(e.message,1); }
+}
+
+/* ---------- boot ---------- */
+(async function(){
+  try{ await DB.load(); }catch(e){ toast("Load failed: "+e.message,1); }
+  render();
+})();
+</script>
+</body>
+</html>
