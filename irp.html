@@ -1,0 +1,282 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Fleet Compliance — IRP · IFTA · 2290</title>
+<style>
+:root{
+  --bg:#E9ECF1; --tile:#fff; --ink:#222A33; --muted:#6E7885; --line:#D5DBE3; --line2:#C3CBD6;
+  --silver1:#FDFDFE; --silver2:#E6EAF0;
+  --blue:#2E6FD9; --blue2:#1F5AB8; --blue-lite:#E8F0FD; --blue-line:#B9D0F2;
+  --green:#2F8F63; --red:#C0453C; --amber:#B5821F;
+  --mono:ui-monospace,SFMono-Regular,Menlo,Consolas,monospace;
+  --sans:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Helvetica,Arial,sans-serif;
+  --r:12px;
+  --lift:0 1px 0 rgba(255,255,255,.9) inset,0 1px 2px rgba(28,40,58,.10),0 4px 10px rgba(28,40,58,.05);
+  --press:0 1px 2px rgba(28,40,58,.14) inset;
+}
+*{box-sizing:border-box}
+body{margin:0;background:var(--bg);color:var(--ink);font-family:var(--sans);font-size:14px;line-height:1.45;-webkit-text-size-adjust:100%}
+button,input,select,textarea{font-family:inherit;font-size:14px;color:inherit}
+header{background:linear-gradient(180deg,#F6F8FB,#DFE4EC);border-bottom:1px solid var(--line2);padding:10px 16px;
+  display:flex;align-items:center;gap:12px;flex-wrap:wrap;position:sticky;top:0;z-index:40;
+  box-shadow:0 1px 0 rgba(255,255,255,.8) inset,0 2px 8px rgba(28,40,58,.06)}
+.brand{font-weight:750;letter-spacing:.06em;font-size:14px;color:#2C3742}.brand b{color:var(--blue)}
+.ver{font-family:var(--mono);font-size:11px;color:var(--muted)}
+.spacer{flex:1}
+.chip{font-family:var(--mono);font-size:11px;font-weight:600;padding:4px 10px;border-radius:999px;
+  background:linear-gradient(180deg,var(--silver1),var(--silver2));border:1px solid var(--line2);box-shadow:var(--lift)}
+.chip.live{background:linear-gradient(180deg,#EAF4EE,#CFE7DA);border-color:#A9CFBB;color:#1F6644}
+.chip.err{background:linear-gradient(180deg,#FCEEEC,#F2D9D6);border-color:#E0B6B1;color:#8A342C}
+main{padding:12px 16px 40px;max-width:1100px;margin:0 auto}
+.kpis{display:grid;grid-template-columns:repeat(auto-fit,minmax(140px,1fr));gap:10px;margin:4px 0 14px}
+.kpi{background:linear-gradient(180deg,#fff,#F1F4F8);border:1px solid var(--line);border-radius:var(--r);padding:11px 13px;box-shadow:var(--lift)}
+.kpi .lbl{font-size:10px;text-transform:uppercase;letter-spacing:.08em;color:var(--muted);font-weight:700}
+.kpi .val{font-family:var(--mono);font-size:22px;font-weight:600;margin-top:4px}
+.tile{background:var(--tile);border:1px solid var(--line);border-radius:var(--r);box-shadow:var(--lift);overflow:hidden}
+.tile .th{padding:10px 14px;background:linear-gradient(180deg,#FBFCFD,#EFF2F6);border-bottom:1px solid var(--line);display:flex;gap:8px;flex-wrap:wrap;align-items:center}
+.filters{display:flex;gap:8px;flex-wrap:wrap;align-items:center;flex:1}
+.filters input[type=text]{width:200px;padding:7px 9px;border:1px solid var(--line2);border-radius:9px;background:#fff}
+.fchips{flex-basis:100%;display:grid;grid-template-columns:repeat(auto-fit,minmax(84px,1fr));gap:6px;padding-top:6px}
+.fc{font-size:12.5px;font-weight:650;padding:7px 6px;border-radius:9px;cursor:pointer;text-align:center;color:#414B57;
+  background:linear-gradient(180deg,var(--silver1),var(--silver2));border:1px solid var(--line2);box-shadow:var(--lift)}
+.fc:active{box-shadow:var(--press);transform:translateY(1px)}
+.fc.on{background:linear-gradient(180deg,#5C90E4,var(--blue));border-color:var(--blue2);color:#fff}
+.vrow{display:flex;align-items:center;gap:12px;padding:11px 14px;border-bottom:1px solid #EFF2F5;cursor:pointer;flex-wrap:wrap}
+.vrow:hover{background:var(--blue-lite)}
+.vunit{font-family:var(--mono);font-weight:750;font-size:14px;color:#1B4A94;background:linear-gradient(180deg,#F3F8FF,#DEEAFB);
+  border:1px solid var(--blue-line);border-radius:8px;padding:2px 9px;min-width:74px;text-align:center}
+.vunit.none{color:var(--muted);background:linear-gradient(180deg,#F8F9FB,#EBEEF2);border-color:var(--line2);font-size:11px;font-weight:600}
+.vmain{flex:1;min-width:180px}
+.vname{font-weight:700}
+.vsub{font-size:12px;color:var(--muted)}
+.vdots{display:flex;gap:5px}
+.dot{font-size:10px;font-weight:800;letter-spacing:.04em;padding:3px 8px;border-radius:999px;border:1px solid var(--line2);
+  background:linear-gradient(180deg,#F8F9FB,#EBEEF2);color:#9AA3AE}
+.dot.on{background:linear-gradient(180deg,#EAF4EE,#CFE7DA);border-color:#A9CFBB;color:#1F6644}
+.vplate{font-family:var(--mono);font-size:12.5px;color:#3D4854;min-width:64px}
+.vexp{font-size:11.5px;color:var(--muted);min-width:90px;text-align:right}
+.vexp .warn{color:var(--amber);font-weight:700}.vexp .bad{color:var(--red);font-weight:700}
+.empty{padding:34px;text-align:center;color:var(--muted)}
+/* sheet */
+.scrim{position:fixed;inset:0;background:rgba(26,36,48,.42);z-index:50;display:none}.scrim.on{display:block}
+.sheet{position:fixed;top:0;right:0;bottom:0;width:min(560px,100%);background:var(--bg);z-index:51;transform:translateX(100%);
+  transition:transform .18s ease;display:flex;flex-direction:column;box-shadow:-8px 0 24px rgba(20,30,44,.18)}
+.sheet.on{transform:none}
+.sheet .sh{padding:12px 16px;background:linear-gradient(180deg,#F6F8FB,#E4E9F0);border-bottom:1px solid var(--line2);display:flex;align-items:center;gap:10px}
+.sheet .sh h2{margin:0;font-size:15px;flex:1;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.x{background:transparent;border:0;font-size:22px;cursor:pointer;color:var(--muted);padding:0 6px;border-radius:8px}
+.sheet .sb{padding:14px 16px;overflow:auto;flex:1}
+.sheet .sf{padding:11px 16px;background:linear-gradient(180deg,#F6F8FB,#E4E9F0);border-top:1px solid var(--line2);display:flex;gap:8px}
+fieldset.fs{border:1px solid var(--line);border-radius:var(--r);padding:13px 14px 3px;margin:0 0 14px;background:linear-gradient(180deg,#FCFDFE,#F6F8FB)}
+fieldset.fs>legend{font-size:10.5px;text-transform:uppercase;letter-spacing:.08em;color:var(--muted);font-weight:800;padding:0 7px}
+label.f{display:block;margin-bottom:11px}
+label.f>span{display:block;font-size:10.5px;text-transform:uppercase;letter-spacing:.07em;color:var(--muted);font-weight:700;margin-bottom:4px}
+input[type=text],input[type=number],input[type=date],textarea{width:100%;padding:7px 9px;border:1px solid var(--line2);border-radius:9px;background:#fff}
+.grid2{display:grid;grid-template-columns:1fr 1fr;gap:0 12px}
+.grid3{display:grid;grid-template-columns:1fr 1fr 1fr;gap:0 12px}
+.ro{display:grid;grid-template-columns:1fr 1fr;gap:7px 12px}
+.ro .sp .spl{display:block;font-size:9.5px;text-transform:uppercase;letter-spacing:.08em;color:var(--muted);font-weight:700}
+.ro .sp .spv{font-size:12.5px}
+.toggles{display:grid;grid-template-columns:1fr 1fr 1fr;gap:8px}
+.tg{border-radius:11px;padding:12px 8px;text-align:center;cursor:pointer;user-select:none;
+  background:linear-gradient(180deg,var(--silver1),var(--silver2));border:1px solid var(--line2);box-shadow:var(--lift)}
+.tg:active{box-shadow:var(--press);transform:translateY(1px)}
+.tg .tn{font-weight:800;font-size:13px;letter-spacing:.04em}
+.tg .ts{font-size:10.5px;color:var(--muted);margin-top:2px}
+.tg.on{background:linear-gradient(180deg,#EAF4EE,#CFE7DA);border-color:#A9CFBB}
+.tg.on .tn{color:#1F6644}.tg.on .ts{color:#2F8F63;font-weight:700}
+.btn{border:1px solid var(--blue2);border-radius:10px;padding:8px 16px;font-weight:650;cursor:pointer;
+  background:linear-gradient(180deg,#5C90E4,var(--blue));color:#fff;box-shadow:0 1px 0 rgba(255,255,255,.3) inset,0 1px 3px rgba(46,111,217,.3)}
+.btn:active{box-shadow:var(--press);transform:translateY(1px)}
+.btn.ghost{background:linear-gradient(180deg,var(--silver1),var(--silver2));border-color:var(--line2);color:#3D4854;box-shadow:var(--lift)}
+.hint{font-size:12px;color:var(--muted)}
+#toast{position:fixed;bottom:20px;left:50%;transform:translateX(-50%);background:#2B3541;color:#fff;padding:10px 18px;border-radius:999px;
+  font-size:13px;z-index:80;opacity:0;pointer-events:none;transition:opacity .2s;box-shadow:0 4px 14px rgba(20,30,44,.3)}
+#toast.on{opacity:1}#toast.err{background:var(--red)}
+@media(max-width:640px){.vexp{min-width:0}.vplate{display:none}}
+</style>
+</head>
+<body>
+<header>
+  <span class="brand">FLEET <b>COMPLIANCE</b></span>
+  <span class="ver">IRP · IFTA · 2290 &nbsp; v1.00</span>
+  <span class="spacer"></span>
+  <span class="chip" id="conn">…</span>
+</header>
+<main>
+  <div class="kpis" id="kpis"></div>
+  <div class="tile">
+    <div class="th">
+      <div class="filters">
+        <input type="text" id="q" placeholder="Search unit, VIN, plate, name…">
+        <div class="fchips" id="chips"></div>
+      </div>
+    </div>
+    <div id="list"></div>
+  </div>
+  <p class="hint" style="margin-top:12px">This page reads and writes the same live register Jon runs. You can edit plates, weights, renewal dates, program membership, and your own notes here — nothing else on a vehicle can be changed from this page.</p>
+</main>
+
+<div class="scrim" id="scrim"></div>
+<aside class="sheet" id="sheet">
+  <div class="sh"><h2 id="shTitle"></h2><button class="x" id="shX">&times;</button></div>
+  <div class="sb" id="shBody"></div>
+  <div class="sf"><button class="btn" id="shSave">Save details</button><button class="btn ghost" id="shClose">Close</button></div>
+</aside>
+<div id="toast"></div>
+
+<script>
+/* Fleet Compliance Portal (Margi) — v1.00
+   Same Supabase table as the Asset Register. This page PATCHes ONLY:
+   plate, reg_expires, gvw, unladen, axles, on_irp, on_ifta, on_2290, compliance_notes */
+const CFG={
+  URL:"https://inhwadbibwkakacdvoxu.supabase.co",
+  KEY:"sb_publishable_mvtNl3RxZB_V8xSserWVZA_8givexBq"
+};
+const $=s=>document.querySelector(s);
+const esc=s=>(s==null?"":String(s)).replace(/[&<>"']/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]));
+const dt=d=>!d?"—":String(d).slice(0,10);
+const today=()=>new Date().toISOString().slice(0,10);
+const days=d=>{if(!d)return null;return Math.round((new Date(d+"T00:00:00")-new Date(today()+"T00:00:00"))/86400000);};
+const num=v=>(v===""||v==null)?null:(isNaN(Number(v))?null:Number(v));
+function toast(m,e){const t=$("#toast");t.textContent=m;t.className="on"+(e?" err":"");setTimeout(()=>t.className="",2400);}
+
+let ROWS=[], FILT="programs", Q="", SEL=null;
+
+async function sb(path,opt={}){
+  const r=await fetch(CFG.URL+"/rest/v1/"+path,{method:opt.method||"GET",
+    headers:{apikey:CFG.KEY,Authorization:"Bearer "+CFG.KEY,"Content-Type":"application/json",Prefer:opt.prefer||"return=representation"},
+    body:opt.body?JSON.stringify(opt.body):undefined});
+  if(!r.ok) throw new Error((await r.text()).slice(0,200));
+  return r.status===204?null:r.json();
+}
+async function load(){
+  try{
+    ROWS=await sb("assets?select=id,unit_no,name,year,make,model,vin,plate,entity,location,status,gvw,unladen,axles,reg_expires,title_number,state,on_irp,on_ifta,on_2290,compliance_notes&order=unit_no.asc");
+    $("#conn").textContent="LIVE"; $("#conn").className="chip live";
+  }catch(e){
+    $("#conn").textContent="OFFLINE"; $("#conn").className="chip err";
+    toast("Could not reach the register: "+e.message,1);
+    ROWS=[];
+  }
+  render();
+}
+const held=a=>!["Sold","Disposed"].includes(a.status);
+const anyProg=a=>a.on_irp||a.on_ifta||a.on_2290;
+
+function filtered(){
+  let r=ROWS.filter(held);
+  if(FILT==="programs") r=r.filter(anyProg);
+  else if(FILT==="irp") r=r.filter(a=>a.on_irp);
+  else if(FILT==="ifta") r=r.filter(a=>a.on_ifta);
+  else if(FILT==="2290") r=r.filter(a=>a.on_2290);
+  else if(FILT==="off") r=r.filter(a=>!anyProg(a));
+  const q=Q.toLowerCase().trim();
+  if(q) r=r.filter(a=>[a.unit_no,a.name,a.vin,a.plate,a.make,a.model].join(" ").toLowerCase().includes(q));
+  return r;
+}
+function render(){
+  const held_=ROWS.filter(held);
+  const irp=held_.filter(a=>a.on_irp).length, ifta=held_.filter(a=>a.on_ifta).length, h2290=held_.filter(a=>a.on_2290).length;
+  const renew=held_.filter(a=>anyProg(a)&&a.reg_expires&&days(a.reg_expires)!=null&&days(a.reg_expires)<=60).length;
+  $("#kpis").innerHTML=`
+    <div class="kpi"><div class="lbl">On IRP</div><div class="val">${irp}</div></div>
+    <div class="kpi"><div class="lbl">On IFTA</div><div class="val">${ifta}</div></div>
+    <div class="kpi"><div class="lbl">On 2290</div><div class="val">${h2290}</div></div>
+    <div class="kpi"><div class="lbl">Renewals ≤60d</div><div class="val"${renew?' style="color:var(--amber)"':''}>${renew}</div></div>`;
+  const chips=[["programs","In programs"],["irp","IRP"],["ifta","IFTA"],["2290","2290"],["off","Off-program"],["all","All fleet"]];
+  $("#chips").innerHTML=chips.map(([k,l])=>`<button class="fc${FILT===k?" on":""}" data-f="${k}">${l}</button>`).join("");
+  $("#chips").querySelectorAll(".fc").forEach(b=>b.onclick=()=>{FILT=b.dataset.f;render();});
+  const rows=filtered();
+  $("#list").innerHTML=rows.map(a=>{
+    const d=days(a.reg_expires);
+    const exp=a.reg_expires?`${dt(a.reg_expires)}${d!=null&&d<=60?` <span class="${d<0?"bad":"warn"}">${d<0?"expired":"in "+d+"d"}</span>`:""}`:"";
+    return `<div class="vrow" data-id="${a.id}">
+      ${a.unit_no?`<span class="vunit">${esc(a.unit_no)}</span>`:`<span class="vunit none">no unit #</span>`}
+      <div class="vmain"><div class="vname">${esc(a.name||"")}</div>
+        <div class="vsub">${esc([a.year,a.make,a.model].filter(Boolean).join(" "))} · ${esc(a.location||"")}${a.entity==="SFAB"?" · SFAB":""}</div></div>
+      <span class="vplate">${esc(a.plate||"")}</span>
+      <div class="vdots">
+        <span class="dot${a.on_irp?" on":""}">IRP</span>
+        <span class="dot${a.on_ifta?" on":""}">IFTA</span>
+        <span class="dot${a.on_2290?" on":""}">2290</span>
+      </div>
+      <span class="vexp">${exp}</span>
+    </div>`;
+  }).join("")||`<div class="empty">Nothing matches.</div>`;
+  $("#list").querySelectorAll(".vrow").forEach(r=>r.onclick=()=>open(r.dataset.id));
+}
+$("#q").addEventListener("input",e=>{Q=e.target.value;render();});
+
+function open(id){
+  SEL=ROWS.find(a=>a.id===id); if(!SEL) return;
+  const a=SEL;
+  $("#shTitle").textContent=(a.unit_no?a.unit_no+" — ":"")+(a.name||"");
+  $("#shBody").innerHTML=`
+  <fieldset class="fs"><legend>Vehicle (read-only)</legend>
+    <div class="ro">
+      <div class="sp"><span class="spl">Year / Make / Model</span><span class="spv">${esc([a.year,a.make,a.model].filter(Boolean).join(" "))||"—"}</span></div>
+      <div class="sp"><span class="spl">Branch</span><span class="spv">${esc(a.location||"—")}${a.entity==="SFAB"?" (SFAB)":""}</span></div>
+      <div class="sp" style="grid-column:1/-1"><span class="spl">VIN</span><span class="spv" style="font-family:var(--mono)">${esc(a.vin||"—")}</span></div>
+      <div class="sp"><span class="spl">Title #</span><span class="spv" style="font-family:var(--mono)">${esc((a.state?a.state+" ":"")+(a.title_number||"—"))}</span></div>
+      <div class="sp"><span class="spl">Status</span><span class="spv">${esc(a.status||"")}</span></div>
+    </div>
+  </fieldset>
+  <fieldset class="fs"><legend>Programs — tap to toggle, saves instantly</legend>
+    <div class="toggles">
+      <div class="tg${a.on_irp?" on":""}" data-t="on_irp"><div class="tn">IRP</div><div class="ts">${a.on_irp?"Enrolled":"Off"}</div></div>
+      <div class="tg${a.on_ifta?" on":""}" data-t="on_ifta"><div class="tn">IFTA</div><div class="ts">${a.on_ifta?"Enrolled":"Off"}</div></div>
+      <div class="tg${a.on_2290?" on":""}" data-t="on_2290"><div class="tn">2290</div><div class="ts">${a.on_2290?"Filed / req'd":"Off"}</div></div>
+    </div>
+    ${a.gvw&&a.gvw>=55000&&!a.on_2290?`<p class="hint" style="margin-bottom:4px">GVW ${Number(a.gvw).toLocaleString()} lb — 2290 normally applies at 55,000+.</p>`:""}
+  </fieldset>
+  <fieldset class="fs"><legend>Registration & weights</legend>
+    <div class="grid2">
+      <label class="f"><span>Plate</span><input type="text" id="p_plate" value="${esc(a.plate||"")}"></label>
+      <label class="f"><span>Renewal / expiration</span><input type="date" id="p_reg" value="${a.reg_expires||""}"></label>
+    </div>
+    <div class="grid3">
+      <label class="f"><span>GVW (lb)</span><input type="number" id="p_gvw" value="${a.gvw??""}"></label>
+      <label class="f"><span>Unladen (lb)</span><input type="number" id="p_unladen" value="${a.unladen??""}"></label>
+      <label class="f"><span>Axles</span><input type="number" id="p_axles" value="${a.axles??""}"></label>
+    </div>
+  </fieldset>
+  <fieldset class="fs"><legend>Compliance notes (yours)</legend>
+    <label class="f"><textarea id="p_notes" rows="3">${esc(a.compliance_notes||"")}</textarea></label>
+  </fieldset>`;
+  $("#shBody").querySelectorAll(".tg").forEach(t=>t.onclick=async()=>{
+    const k=t.dataset.t, nv=!a[k];
+    try{
+      await sb("assets?id=eq."+a.id,{method:"PATCH",body:{[k]:nv},prefer:"return=minimal"});
+      a[k]=nv; toast((k==="on_irp"?"IRP":k==="on_ifta"?"IFTA":"2290")+(nv?" on":" off"));
+      open(a.id); render();
+    }catch(e){ toast(e.message,1); }
+  });
+  $("#sheet").classList.add("on"); $("#scrim").classList.add("on");
+  $("#shBody").scrollTop=0;
+}
+function close(){ $("#sheet").classList.remove("on"); $("#scrim").classList.remove("on"); SEL=null; }
+$("#shX").onclick=close; $("#shClose").onclick=close; $("#scrim").onclick=close;
+document.addEventListener("keydown",e=>{if(e.key==="Escape")close();});
+$("#shSave").onclick=async()=>{
+  if(!SEL) return;
+  const patch={
+    plate:$("#p_plate").value.trim(),
+    reg_expires:$("#p_reg").value||null,
+    gvw:num($("#p_gvw").value),
+    unladen:num($("#p_unladen").value),
+    axles:num($("#p_axles").value),
+    compliance_notes:$("#p_notes").value.trim()
+  };
+  try{
+    await sb("assets?id=eq."+SEL.id,{method:"PATCH",body:patch,prefer:"return=minimal"});
+    Object.assign(SEL,patch);
+    toast("Saved"); close(); render();
+  }catch(e){ toast(e.message,1); }
+};
+load();
+</script>
+</body>
+</html>
