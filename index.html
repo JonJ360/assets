@@ -272,7 +272,7 @@ table.apx td.sm{font-size:11px;color:#55606C}
 
 <header>
   <span class="brand">ASSET <b>REGISTER</b></span>
-  <span class="ver" id="verTag">v1.30</span>
+  <span class="ver" id="verTag">v1.31</span>
   <span class="spacer"></span>
   <span class="synct" id="syncT"></span>
   <button class="syncbtn" id="syncBtn" title="Sync now">&#10227;</button>
@@ -314,7 +314,7 @@ table.apx td.sm{font-size:11px;color:#55606C}
 const BAKED_CONFIG = {
   SUPABASE_URL: "https://inhwadbibwkakacdvoxu.supabase.co",   // AR Collections project
   SUPABASE_ANON_KEY: "sb_publishable_mvtNl3RxZB_V8xSserWVZA_8givexBq",
-  APP_VERSION: "1.30",
+  APP_VERSION: "1.31",
   // Unit # convention. Prefix per branch, separator, zero-padding width.
   // Fargo 107 -> "F-107". Set UNIT_PAD to 3 for "F-107", 0 for no padding.
   UNIT_PREFIX: { "Fargo":"F", "Bismarck":"B", "Grand Forks":"GF" },
@@ -778,11 +778,12 @@ function vAssets(){
     ${rows.length?`<div class="ac-total"><span>${rows.length} asset${rows.length===1?"":"s"}</span><span class="mono">${money(cost)}</span></div>`:""}
     </div>
     <table class="responsive atable"><thead><tr>
-      ${H("unit_no","Unit #")}${H("name","Asset")}${H("category","Category")}${H("entity","Entity")}${H("location","Branch")}${H("status","Status")}${H("purchase_date","Purchased")}${H("purchase_price","Purchase",1)}${H("sale_price","Sell",1)}
+      ${H("unit_no","Unit #")}${H("name","Asset")}${H("year","Year")}${H("category","Category")}${H("entity","Entity")}${H("location","Branch")}${H("status","Status")}${H("purchase_date","Purchased")}${H("purchase_price","Purchase",1)}${H("sale_price","Sell",1)}
     </tr></thead><tbody>
     ${rows.map(a=>{const g=gainOf(a);return `<tr class="clickable" data-open="${a.id}">
       <td data-l="Unit #" class="mono">${a.unit_no?esc(a.unit_no):'<span class="hint">—</span>'}</td>
-      <td data-l="Asset"><strong>${esc(a.name||"(unnamed)")}</strong>${(a.make||a.model||a.year)?`<div class="hint">${esc([a.year,a.make,a.model].filter(Boolean).join(" "))}</div>`:""}</td>
+      <td data-l="Asset"><strong>${esc(a.name||"(unnamed)")}</strong>${(a.make||a.model)?`<div class="hint">${esc([a.make,a.model].filter(Boolean).join(" "))}</div>`:""}</td>
+      <td data-l="Year" class="mono">${a.year||'<span class="hint">—</span>'}</td>
       <td data-l="Category">${esc(a.category||"—")}</td>
       <td data-l="Entity">${esc(a.entity||"—")}</td>
       <td data-l="Branch">${esc(a.location||"—")}</td>
