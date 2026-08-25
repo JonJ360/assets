@@ -134,6 +134,9 @@ fieldset.fs>legend{font-size:10.5px;text-transform:uppercase;letter-spacing:.08e
 .btn.warn:hover{background:linear-gradient(180deg,#E6B052,#D4901F)}
 .pill.prog{background:linear-gradient(180deg,#FFF6DC,#F6E7BC);border-color:#E0C05F;color:#7B5B0D;margin-left:6px}
 .ipbox{display:inline-flex;align-items:center;justify-content:center;padding:4px;cursor:pointer}
+.ipline{display:flex;align-items:flex-start;gap:8px;margin:0 0 12px;padding:9px 11px;border-radius:9px;cursor:pointer;
+  background:linear-gradient(180deg,#FFF9EA,#FBEFD6);border:1px solid #E7CF9C;font-size:12.5px;line-height:1.4}
+.ipline input{width:18px;height:18px;accent-color:#C9861F;flex:0 0 auto;margin-top:1px;cursor:pointer}
 .ipbox input{width:19px;height:19px;accent-color:#C9861F;cursor:pointer}
 .acard{position:relative}
 .acard.gone{background:linear-gradient(180deg,#FBFAFD,#EEECF3);border-color:#D5CFE2}
@@ -261,7 +264,7 @@ table.apx td.sm{font-size:11px;color:#55606C}
 
 <header>
   <span class="brand">ASSET <b>REGISTER</b></span>
-  <span class="ver" id="verTag">v1.23</span>
+  <span class="ver" id="verTag">v1.24</span>
   <span class="spacer"></span>
   <span class="chip" id="conn">…</span>
 </header>
@@ -299,7 +302,7 @@ table.apx td.sm{font-size:11px;color:#55606C}
 const BAKED_CONFIG = {
   SUPABASE_URL: "https://inhwadbibwkakacdvoxu.supabase.co",   // AR Collections project
   SUPABASE_ANON_KEY: "sb_publishable_mvtNl3RxZB_V8xSserWVZA_8givexBq",
-  APP_VERSION: "1.23",
+  APP_VERSION: "1.24",
   // Unit # convention. Prefix per branch, separator, zero-padding width.
   // Fargo 107 -> "F-107". Set UNIT_PAD to 3 for "F-107", 0 for no padding.
   UNIT_PREFIX: { "Fargo":"F", "Bismarck":"B", "Grand Forks":"GF" },
@@ -665,6 +668,19 @@ function vDash(){
 }
 
 /* ---------- assets ---------- */
+/* ---------- attention flags (computed, never stored) ---------- */
+function attentionFlags(a){
+  const out=[];
+  if(!HELD.includes(a.status)) return out;
+  if(!a.insured) out.push("Not marked insured");
+  const d=daysUntil(a.reg_expires);
+  if(a.reg_expires && d!=null){
+    if(d<0) out.push("Registration expired "+Math.abs(d)+"d ago");
+    else if(d<=60) out.push("Registration renews in "+d+"d");
+  }
+  return out;
+}
+
 /* ---------- asset card (narrow screens) ---------- */
 // Every populated field lands on the card so a unit can be read without opening it.
 function assetCard(a){
@@ -972,7 +988,7 @@ function readForm(){
   DATE_FIELDS.forEach(k=>{const v=g(k); if(v!==undefined) a[k]=v||null;});
   const ins=g("insured"); if(ins!==undefined) a.insured=ins==="true";
   const ds=g("on_dep_schedule"); if(ds!==undefined) a.on_dep_schedule=ds==="true";
-  const ip=g("in_progress"); if(ip!==undefined) a.in_progress=ip==="true";
+  const ipEl=$("#f_in_progress"); if(ipEl) a.in_progress=ipEl.checked;
   return a;
 }
 function formDirty(){
@@ -1148,7 +1164,7 @@ function openAsset(id){
       </div>
       <label class="f"><span>Status</span><select id="f_status">${opts(STATUSES,a.status||"Active")}</select></label>
     </div>
-    <label class="f"><span>In progress (I'm on it)</span><select id="f_in_progress"><option value="false"${!a.in_progress?" selected":""}>No</option><option value="true"${a.in_progress?" selected":""}>Yes — looking into it</option></select></label>
+    ${(attentionFlags(a).length||a.in_progress)?`<label class="ipline"><input type="checkbox" id="f_in_progress"${a.in_progress?" checked":""}> <span><strong>I'm on it</strong> — ${esc(attentionFlags(a).join(" · ")||"flag cleared; untick to remove the marker")}</span></label>`:""}
     <label class="f"><span>Asset name *</span><input type="text" id="f_name" value="${esc(a.name||"")}" placeholder="Freightliner Flatbed #1"></label>
     <div class="f"><span class="flbl">Category</span>
       <input type="hidden" id="f_category" value="${esc(a.category||"")}">
