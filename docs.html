@@ -32,7 +32,7 @@ ol,ul{padding-left:20px;margin:6px 0}li{margin:4px 0}
 </style>
 </head>
 <body>
-<header><span class="brand">ASSET <b>REGISTER</b> — DOCS</span><span class="ver">v1.28</span><a href="index.html">Open app →</a></header>
+<header><span class="brand">ASSET <b>REGISTER</b> — DOCS</span><span class="ver">v1.30</span><a href="index.html">Open app →</a></header>
 <main>
 
 <h2>What this is</h2>
@@ -124,6 +124,22 @@ alter table assets add column if not exists origin          text;</pre></div>
 <h2>Changed in v1.20</h2>
 <div class="card">
 Added the <strong>2027 Nordtek DO102X24-14K deck-over trailer</strong> from the Certificate of Origin: VIN 2NDKB2427VL001582, GVW 14,000 lb, purchased from James Kota Inc (Jamestown, invoice 262290), COO No. 00001950 in hand, not yet titled. Funding recorded as Trade-In; insured (matches the carrier list, whose VIN for it is a character short). Purchase price and the traded-in unit weren't on the scanned bill of sale — price blank, trade-in disposition pending. 86 vehicles total.
+</div>
+
+<h2>Changed in v1.30</h2>
+<div class="card">
+<p style="margin-top:0"><strong>Full audit history.</strong> A database trigger (history_setup.sql) records every insert, update, and delete on the assets table — field-by-field, old value &rarr; new value — regardless of whether the change came from the register, Margi's portal, or a SQL script. No-op saves log nothing.</p>
+<ul>
+<li><strong>History tab</strong> in the register: the last 150 changes fleet-wide, newest first, each row tap-through to the asset.</li>
+<li><strong>History section in the asset panel</strong>: that vehicle's last 15 changes.</li>
+<li>History is <strong>read-only from the apps</strong> — select-only grants; only the trigger can write it. Deleting an asset does not delete its history.</li>
+<li>Trail begins when the trigger is installed; earlier changes aren't reconstructable.</li>
+</ul>
+</div>
+
+<h2>Changed in v1.29</h2>
+<div class="card">
+Both pages now re-sync automatically when restored from the browser's back/forward cache — hopping register &harr; portal always shows fresh data, no manual &#10227; needed. (Portal v1.03; also includes the blue Home button from v1.02.)
 </div>
 
 <h2>Changed in v1.28</h2>
@@ -429,6 +445,8 @@ Depreciation · file attachments (link out via <code>doc_url</code>) · maintena
 <table>
 <thead><tr><th>Ver</th><th>Changes</th></tr></thead>
 <tbody>
+<tr><td>1.30</td><td>Audit trail: database trigger logs all changes to asset_history (read-only from apps). History tab (last 150 fleet-wide) and per-asset history in the panel.</td></tr>
+<tr><td>1.29</td><td>Auto re-sync on back/forward-cache restore in both the register and the portal (pageshow persisted handler).</td></tr>
 <tr><td>1.28</td><td>IRP/IFTA/2290 toggles in the register's asset panel and on cards; flags in export/import. Portal v1.01 adds Home and the matching sync cluster. Requires the portal SQL columns.</td></tr>
 <tr><td>1.27</td><td>Top-right sync cluster: live chip, last-synced timestamp, on-demand sync button with spinner, auto re-sync on tab focus after 60s (suppressed while editing), tap-to-retry offline state.</td></tr>
 <tr><td>1.26</td><td>Nav tray link to the IRP/IFTA compliance portal. (1.25 reverted.)</td></tr>
