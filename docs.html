@@ -32,7 +32,7 @@ ol,ul{padding-left:20px;margin:6px 0}li{margin:4px 0}
 </style>
 </head>
 <body>
-<header><span class="brand">ASSET <b>REGISTER</b> — DOCS</span><span class="ver">v1.22</span><a href="index.html">Open app →</a></header>
+<header><span class="brand">ASSET <b>REGISTER</b> — DOCS</span><span class="ver">v1.23</span><a href="index.html">Open app →</a></header>
 <main>
 
 <h2>What this is</h2>
@@ -124,6 +124,17 @@ alter table assets add column if not exists origin          text;</pre></div>
 <h2>Changed in v1.20</h2>
 <div class="card">
 Added the <strong>2027 Nordtek DO102X24-14K deck-over trailer</strong> from the Certificate of Origin: VIN 2NDKB2427VL001582, GVW 14,000 lb, purchased from James Kota Inc (Jamestown, invoice 262290), COO No. 00001950 in hand, not yet titled. Funding recorded as Trade-In; insured (matches the carrier list, whose VIN for it is a character short). Purchase price and the traded-in unit weren't on the scanned bill of sale — price blank, trade-in disposition pending. 86 vehicles total.
+</div>
+
+<h2>Changed in v1.23</h2>
+<div class="card">
+<p style="margin-top:0"><strong>In-progress tracking on Needs Attention.</strong> Each attention row has a checkbox on the right; ticking it saves immediately and puts a yellow <em>In progress</em> pill next to the red flag — the "I've emailed the branch, waiting to hear back" state. Untick to clear.</p>
+<ul>
+<li>The marker is per-asset (<code>in_progress</code> boolean), shows on the asset card next to status, and can also be set in the detail panel next to Status.</li>
+<li>Included in CSV export and import (Yes/X/true all read as on).</li>
+<li><strong>Schema:</strong> run once in the AR Collections SQL editor:
+<pre style="margin-bottom:0">alter table assets add column if not exists in_progress boolean default false;</pre></li>
+</ul>
 </div>
 
 <h2>Changed in v1.22</h2>
@@ -382,6 +393,7 @@ Depreciation · file attachments (link out via <code>doc_url</code>) · maintena
 <table>
 <thead><tr><th>Ver</th><th>Changes</th></tr></thead>
 <tbody>
+<tr><td>1.23</td><td>Added in_progress flag: checkbox on Needs Attention rows with instant save, yellow In-progress pill beside the red flag, shown on cards and editable in the detail panel. One-line schema addition.</td></tr>
 <tr><td>1.22</td><td>Go-live: AR Collections Supabase credentials baked in; assets_setup.sql ships schema, RLS, and the 92-row data load in one script.</td></tr>
 <tr><td>1.21</td><td>Reconciled to updated split SMI/SFAB carrier lists. Merged duplicate 2017 GMC Sierra. Two units moved to SFAB per policy. Seven policy-only vehicles added with verify notes. 92 vehicles, 72 insured, 20 uninsured.</td></tr>
 <tr><td>1.20</td><td>Added 2027 Nordtek deck-over trailer from the COO. Trade-in unit and purchase price pending the completed bill of sale.</td></tr>
