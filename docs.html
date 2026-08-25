@@ -1,0 +1,413 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Asset Register — Documentation</title>
+<style>
+:root{--bg:#E9ECF1;--tile:#fff;--ink:#222A33;--muted:#6E7885;--line:#D5DBE3;--line2:#C3CBD6;
+--blue:#2E6FD9;--blue2:#1F5AB8;--blue-lite:#E8F0FD;--amber:#B5821F;
+--mono:ui-monospace,SFMono-Regular,Menlo,Consolas,monospace;--sans:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Helvetica,Arial,sans-serif;
+--lift:0 1px 0 rgba(255,255,255,.9) inset,0 1px 2px rgba(28,40,58,.10),0 4px 10px rgba(28,40,58,.05);}
+*{box-sizing:border-box}
+body{margin:0;background:var(--bg);color:var(--ink);font-family:var(--sans);font-size:14.5px;line-height:1.6}
+header{background:linear-gradient(180deg,#F6F8FB,#DFE4EC);border-bottom:1px solid var(--line2);padding:13px 18px;
+ display:flex;gap:12px;align-items:baseline;position:sticky;top:0;z-index:5;box-shadow:0 1px 0 rgba(255,255,255,.8) inset}
+.brand{font-weight:750;letter-spacing:.06em;font-size:14px}.brand b{color:var(--blue)}
+.ver{font-family:var(--mono);font-size:12px;color:var(--muted)}
+header a{margin-left:auto;color:var(--blue2);font-size:13px;font-weight:600;text-decoration:none;
+ background:linear-gradient(180deg,#FDFDFE,#E6EAF0);border:1px solid var(--line2);border-radius:10px;padding:5px 12px;box-shadow:var(--lift)}
+main{max-width:900px;margin:0 auto;padding:20px 18px 60px}
+h2{font-size:11.5px;text-transform:uppercase;letter-spacing:.09em;color:var(--muted);margin:26px 0 10px}
+.card{background:var(--tile);border:1px solid var(--line);border-radius:12px;padding:14px 16px;margin-bottom:14px;box-shadow:var(--lift)}
+.card.warn{background:linear-gradient(180deg,#FFFBF0,#FBEFD6);border-color:#E7CF9C}
+.card.blue{background:linear-gradient(180deg,#F4F8FF,var(--blue-lite));border-color:#B9D0F2}
+code{font-family:var(--mono);font-size:12.5px;background:#DFE4EB;padding:1px 5px;border-radius:4px}
+pre{background:#1E2833;color:#DCE6F0;padding:14px;border-radius:12px;overflow:auto;font-family:var(--mono);font-size:12px;line-height:1.55}
+table{width:100%;border-collapse:collapse;margin:6px 0}
+th{text-align:left;font-size:10.5px;text-transform:uppercase;letter-spacing:.07em;color:var(--muted);border-bottom:1px solid var(--line);padding:8px 9px}
+td{padding:7px 9px;border-bottom:1px solid #EFF2F5;vertical-align:top}
+td:first-child{font-family:var(--mono);font-size:12.5px;white-space:nowrap}
+ol,ul{padding-left:20px;margin:6px 0}li{margin:4px 0}
+</style>
+</head>
+<body>
+<header><span class="brand">ASSET <b>REGISTER</b> — DOCS</span><span class="ver">v1.22</span><a href="index.html">Open app →</a></header>
+<main>
+
+<h2>What this is</h2>
+<div class="card">
+Equipment and vehicle register for Fargo, Bismarck, and Grand Forks. Tracks what you own, where it is, who has it, what you paid, and what you sold it for. Two prices per asset — purchase and sell. No transaction ledger, no depreciation; that stays in GP and with Devon. Single-file vanilla HTML/JS, Supabase backend, GitHub Pages deployable.
+</div>
+
+<h2>Setup — 4 steps</h2>
+<div class="card">
+<ol>
+<li><strong>Create a Supabase project.</strong> Separate from AR CRM and Ignite Care for data isolation.</li>
+<li><strong>Run the SQL below</strong> in the SQL editor.</li>
+<li><strong>Paste credentials</strong> into <code>BAKED_CONFIG</code> at the top of the script in <code>index.html</code> — <code>SUPABASE_URL</code> and <code>SUPABASE_ANON_KEY</code> (Settings &rarr; API).</li>
+<li><strong>Push to GitHub Pages.</strong> The header chip flips from <code>LOCAL — NOT SAVED</code> to <code>SUPABASE LIVE</code>.</li>
+</ol>
+</div>
+<div class="card warn">Until credentials are baked in, the app runs in local mode with sample data and nothing persists on reload. Intentional — evaluate the workflow before standing up the backend.</div>
+
+<h2>SQL schema</h2>
+<pre>-- Asset Register v1.01
+create extension if not exists "pgcrypto";
+
+create table if not exists assets (
+  id             uuid primary key default gen_random_uuid(),
+  unit_no        text,
+  name           text not null,
+  category       text,
+  make           text,
+  model          text,
+  year           int,
+  vin            text,
+  serial         text,
+  plate          text,
+  entity         text,
+  location       text,
+  status         text default 'Active',
+  assigned_to    text,
+  purchase_date  date,
+  purchase_price numeric(14,2),
+  sale_price     numeric(14,2),
+  vendor         text,
+  funding        text,
+  lender         text,
+  loan_payoff    numeric(14,2),
+  reg_expires    date,
+  insured        boolean default false,
+  title_status   text,
+  title_note     text,
+  state          text,
+  title_number   text,
+  gvw            numeric(10,0),
+  on_dep_schedule boolean default false,
+  dep_location   text,
+  origin         text,
+  notes          text,
+  doc_url        text,
+  created_at     timestamptz default now(),
+  updated_at     timestamptz default now()
+);
+
+create index if not exists idx_assets_entity   on assets(entity);
+create index if not exists idx_assets_status   on assets(status);
+create index if not exists idx_assets_location on assets(location);
+create index if not exists idx_assets_unit     on assets(unit_no);
+
+-- RLS: anon-key access, same posture as the AR CRM.
+alter table assets enable row level security;
+create policy "anon all assets" on assets
+  for all using (true) with check (true);</pre>
+
+<div class="card warn"><strong>Security.</strong> That policy lets anyone with the anon key and the URL read and write. Fine for an unlisted Pages URL; it is not access control. This table holds VINs, payoff balances, and lender names — add Supabase Auth and restrict the policy to <code>authenticated</code> before real data goes in.</div>
+
+<div class="card blue"><strong>Coming from an earlier version?</strong> From v1.00, drop and rerun:
+<pre>drop table if exists asset_txns;
+drop table if exists assets;</pre>
+From v1.01, rename the column:
+<pre>alter table assets rename column tag to unit_no;</pre>
+From v1.02&ndash;v1.11, add the title columns:
+<pre>alter table assets add column if not exists title_status text;
+alter table assets add column if not exists title_note   text;</pre>
+From v1.12&ndash;v1.15, add the Title Master columns:
+<pre style="margin-bottom:0">alter table assets add column if not exists state           text;
+alter table assets add column if not exists title_number    text;
+alter table assets add column if not exists gvw             numeric(10,0);
+alter table assets add column if not exists on_dep_schedule boolean default false;
+alter table assets add column if not exists dep_location    text;
+alter table assets add column if not exists origin          text;</pre></div>
+
+<h2>Changed in v1.20</h2>
+<div class="card">
+Added the <strong>2027 Nordtek DO102X24-14K deck-over trailer</strong> from the Certificate of Origin: VIN 2NDKB2427VL001582, GVW 14,000 lb, purchased from James Kota Inc (Jamestown, invoice 262290), COO No. 00001950 in hand, not yet titled. Funding recorded as Trade-In; insured (matches the carrier list, whose VIN for it is a character short). Purchase price and the traded-in unit weren't on the scanned bill of sale — price blank, trade-in disposition pending. 86 vehicles total.
+</div>
+
+<h2>Changed in v1.22</h2>
+<div class="card">
+<strong>Go-live build.</strong> Supabase credentials for the AR Collections project are baked into <code>BAKED_CONFIG</code>. Run <code>assets_setup.sql</code> once in that project's SQL editor — it creates the table (erroring loudly if one already exists rather than silently reusing it), indexes, the RLS policy, and inserts all 92 vehicles. Push index.html to GitHub Pages and the header flips to SUPABASE LIVE. The baked seed only runs in local mode and is ignored once live.
+</div>
+
+<h2>Changed in v1.21</h2>
+<div class="card">
+<p style="margin-top:0"><strong>Reconciled to the updated carrier lists</strong>, now split SMI (67 vehicles) and SFAB (4). Register is 92 vehicles: 72 on a policy, 20 on neither.</p>
+<ul>
+<li>Duplicate 2017 GMC Sierra merged (same VIN, retitled ND; ND title number kept).</li>
+<li>2017 GMC Sierra Denali and 2023 Silverado moved to entity SFAB — they sit on the SFAB policy.</li>
+<li>Seven policy vehicles absent from the Title Master added to the register with verify notes: two SFAB Peterbilts (2016 579, 2021 337) and five SMI units (2015 Chev 2500, 1995 Peterbilt, 2013 Ram 1500, 2024 Sierra 1500, 2021 H&amp;H aluminum rail trailer).</li>
+<li>GF-112, SF-201, SF-307 remain on the SMI policy while the register carries them as SFAB — flagged for the agent.</li>
+<li>Seven carrier VIN typos persist on the updated lists, including the Nordtek.</li>
+</ul>
+</div>
+
+<h2>Changed in v1.19</h2>
+<div class="card">
+<p style="margin-top:0"><strong>Insured flags reconciled to the carrier vehicle list</strong> (8/24/26, pending the updated list). Matching was by VIN, exact plus a fuzzy pass for one-to-two-character typos with check-digit validation.</p>
+<ul>
+<li>61 register vehicles are on the policy; 24 are not — those now show insured "No" and flag on the dashboard when held.</li>
+<li>Seven VIN pairs differ between the sheets by one or two characters. The register VIN validates in six of them (carrier typos); in the seventh the register's 2026 Silverado 1500 VIN was a digit short and was corrected to the carrier's valid VIN 1GCPKKEK0TZ103126.</li>
+<li>Nine policy rows aren't in the register at all, including a 1995 Peterbilt, a 2013 Ram 1500, a 2021 H&amp;H aluminum rail trailer, and a 2027 Nordtek. One is a non-owned trailer placeholder.</li>
+<li>Full detail in SMI_Insurance_Reconciliation.xlsx: Summary, Register NOT on policy, On policy NOT in register, VIN discrepancies.</li>
+</ul>
+</div>
+
+<h2>Changed in v1.18</h2>
+<div class="card">
+<ul>
+<li><strong>GF-112 moved to SFAB</strong> — its note reads "SOLD TO STRUCTURAL FAB."</li>
+<li><strong>GF-112 was listed twice</strong> (same VIN 2NP2HM7X9HM370768, once In Hand with a title copy, once Missing). Merged to one record: title In Hand, title number kept, notes combined "COPY · SOLD TO STRUCTURAL FAB." Register is 85 vehicles: 55 In Hand, 30 Missing, 17 of those from the old sheet.</li>
+<li><strong>FF decoded as Fergus Falls</strong> (closed branch) — both vehicles stay in Fargo and their notes now read "Ex-Fergus Falls branch (closed)."</li>
+</ul>
+</div>
+
+<h2>Changed in v1.17</h2>
+<div class="card">
+Data corrections to the baked Title Master: <strong>SF-201 and SF-307 reassigned to entity SFAB</strong> (Structural Fab unit prefix), and <strong>all 25 vehicles with no branch moved to Fargo</strong> — including the two FF-coded rows, whose original code stays in their notes. Branch counts are now Fargo 59, Bismarck 16, Grand Forks 11; entities SMI 84, SFAB 2.
+</div>
+
+<h2>Changed in v1.16</h2>
+<div class="card">
+<p style="margin-top:0"><strong>SMI Title Master v13 is baked in as the working data</strong> — all 86 rows: 55 titles In Hand, 14 Missing, 17 Missing from the old sheet. The Depr. Schedule &ndash; No Title tab was ignored per instruction.</p>
+<ul>
+<li><strong>Six new fields:</strong> title state, title number, GVW, on-depreciation-schedule (yes/no), depreciation schedule line (column T), and origin (Physical Title / Old Sheet).</li>
+<li><strong>Title vocabulary matches the sheet:</strong> In Hand · Missing · With lender · Applied for · No title.</li>
+<li><strong>Detail panel:</strong> Title section carries state, number, and origin; new Depreciation schedule section carries on/off and the line; GVW sits with the plate.</li>
+<li><strong>Cards</strong> show GVW, title # with state, origin, and the depreciation line.</li>
+<li><strong>Appendix</strong> gained a Depr. column; the title cell shows the number and flags Old Sheet rows in red; header now reads "55 titles in hand · 31 missing · 17 from the old sheet still to track down."</li>
+<li><strong>Dashboard</strong> gained a Titles missing KPI with the old-sheet count under it.</li>
+<li><strong>Grand Forks prefix corrected to GF</strong> to match real unit numbers (GF-111).</li>
+</ul>
+<p><strong>Data normalization applied:</strong> FAR/FARGO&rarr;Fargo, BIS&rarr;Bismarck, GF&rarr;Grand Forks; two rows coded FF left with no branch and the code preserved in notes. Dates MM-DD-YY converted to ISO. Insured X&rarr;yes; one "Waiting on Title" moved to notes. Lienholders (First International, Alerus, Choice) set funding to Loan. Purchase Price was empty in the sheet, so those are blank. Everything imported as entity SMI, status Active, category blank.</p>
+</div>
+
+<h2>Changed in v1.15</h2>
+<div class="card">
+<ul>
+<li><strong>Mark sold</strong> button in the asset panel footer. It sets the status to Sold, jumps to the Price block, flashes it, and puts the cursor in Sell price. Nothing is written until you Save.</li>
+<li>On an asset already sold the same button reads <strong>Return to active</strong> and flips the status back.</li>
+<li><strong>Sold cards read as gone</strong> — muted purple-grey card, a SOLD ribbon in the corner, purple unit plate. Disposed gets the same treatment with a DISPOSED ribbon.</li>
+<li>Footer shows purchase, sell, and spread side by side, so a sold unit shows what it cost and what it brought without opening it.</li>
+<li><strong>Sold quick filter</strong> in the register toolbar next to No unit #. One tap to see everything gone, tap again to clear.</li>
+</ul>
+<p style="margin-bottom:0">No sale date field was added — status plus sell price is the whole record, as specified in v1.01. Say the word if a disposal date turns out to matter for the fixed-asset roll.</p>
+</div>
+
+<h2>Changed in v1.14</h2>
+<div class="card">
+Added <strong>Forklift</strong> as a seventh category. The filter grid reflows to fit it — four across then three on a phone. Sample data now includes two forklifts, both with no unit number and title status "No title," which is the normal shape for yard equipment.
+</div>
+
+<h2>Changed in v1.13</h2>
+<div class="card">
+<ul>
+<li><strong>Cards now carry every populated field</strong> — category, entity, branch, assigned to, VIN, serial, plate, registration, insurance, purchase date, vendor, funding, lender, payoff, title status, title holder, notes, document link.</li>
+<li>Laid out as a two-column spec grid with small labels above values. VIN, title note, notes, and the document link span the full width.</li>
+<li><strong>Empty fields are omitted</strong> rather than shown as dashes, so a thin record stays a short card.</li>
+<li>Registration inside 60 days shows the countdown on the card; expired shows in red. Uninsured shows in red.</li>
+<li>Footer carries purchase, sell, and spread side by side, each labeled.</li>
+</ul>
+</div>
+
+<h2>Changed in v1.12</h2>
+<div class="card">
+<ul>
+<li><strong>Asset list is cards on phone</strong> instead of stacked label/value rows. Wide screens still get the sortable table. <em>(Expanded to all fields in v1.13.)</em></li>
+<li><strong>Title tracking.</strong> New <code>title_status</code> field — In possession, With lender, Applied for, Lost, No title — plus a <code>title_note</code> for who holds it. Chiclet picker in the detail panel, under its own Title heading.</li>
+<li><strong>Appendix tab.</strong> Every asset in one dense roster, grouped by branch, unit-number order, with count and cost per branch. Columns: unit #, asset, year/make/model, category, entity, VIN or serial, plate, status, title, purchase, sell. Print / PDF button with print styling, plus a CSV button.</li>
+<li>The appendix header calls out how many titles a lender holds and how many held assets have no title status recorded.</li>
+</ul>
+</div>
+
+<h2>Changed in v1.11</h2>
+<div class="card">
+Category filter is single-select. Tapping a category replaces the current one; tapping the lit one clears it. None lit means all.
+</div>
+
+<h2>Changed in v1.10</h2>
+<div class="card">
+Category filter chiclets are now a wrapping grid of equal blocks instead of a sideways-scrolling row — all six visible at once, three across on a phone, one row on a wide screen. Nothing to swipe.
+</div>
+
+<h2>Changed in v1.09</h2>
+<div class="card">
+<ul>
+<li><strong>Categories reduced to six:</strong> Truck, Car, Semi, Trailer, Van, SUV. Edit <code>CATEGORIES</code> at the top of the script to change them. <em>(Forklift added in v1.14.)</em></li>
+<li><strong>Category filter is now chiclets</strong>, on their own row under the search box. The dropdown is gone.</li>
+<li><strong>Filter chiclets</strong> — tap to filter, tap again to clear. <em>(Multi-select was dropped in v1.11.)</em></li>
+<li>The row scrolls sideways on a phone instead of wrapping, so it stays one line. <em>(Replaced with a wrapping block grid in v1.10.)</em></li>
+<li>In the detail panel the picker is a single flat row now that there are only six — no group labels. Imported categories outside the six still appear on their own labeled row.</li>
+<li>Sample data reseeded to the new vocabulary.</li>
+</ul>
+</div>
+
+<h2>Changed in v1.08</h2>
+<div class="card">
+<ul>
+<li><strong>Category is a chiclet picker</strong>, not a dropdown. Every option visible at once, one tap to set, tap again to clear. <em>(Groups removed in v1.09.)</em></li>
+<li>Categories live at the top of the script and feed the picker, the filter, and import. <em>(<code>CATEGORY_GROUPS</code> became a flat <code>CATEGORIES</code> list in v1.09.)</em></li>
+<li>Any category that arrives from a spreadsheet outside the standard set is preserved and shown under an <strong>Imported</strong> group rather than being silently dropped.</li>
+</ul>
+</div>
+
+<h2>Changed in v1.07</h2>
+<div class="card">
+Entities reduced to <strong>SMI</strong> and <strong>SFAB</strong>. Both always appear in the entity filter even before any records exist. New assets default to SMI. The list is <code>ENTITIES</code> near the top of the script — edit there to change the labels or add one back.
+</div>
+
+<h2>Changed in v1.06</h2>
+<div class="card">
+Removed the <strong>Remove</strong> button from the locked unit plate. <strong>Change</strong> is the only way in. To clear a number, hit Change and delete the digits — the field commits blank.
+</div>
+
+<h2>Changed in v1.05</h2>
+<div class="card">
+<p style="margin-top:0"><strong>Assign # removed.</strong> The unit number field was rebuilt so an assigned number can't be overwritten by a stray click or keystroke.</p>
+<ul>
+<li><strong>Locked by default.</strong> An asset that already has a number shows it as a read-only plate. Nothing typed into the panel can change it.</li>
+<li><strong>Change</strong> unlocks it for editing. <em>(Remove was dropped in v1.06 — clear the digits instead.)</em></li>
+<li><strong>The prefix isn't typable.</strong> In edit mode the branch letter sits in a fixed chip and only the digits are entered, so F-107 can't become 107 or B-107 by accident. Switch the branch and the prefix follows, digits intact.</li>
+<li><strong>Open numbers are offered as chips</strong> — the lowest few gaps in that branch's series plus the next number after the highest. Clicking one is a deliberate act on a specific number, not a blind auto-fill.</li>
+<li><strong>Non-standard numbers</strong> still work: "Enter a non-standard number" drops to free text for legacy formats like SMI 107.</li>
+<li><strong>Done</strong> re-locks the plate.</li>
+</ul>
+</div>
+
+<h2>Changed in v1.04</h2>
+<div class="card">
+<ul>
+<li><strong>&#8249; &#8250; page between assets</strong> in the detail panel header, with an "n of m" counter. Arrow keys work too when the cursor isn't in a field.</li>
+<li>Paging follows <strong>the register's current filter and sort</strong> — filter to Bismarck forklifts and the arrows walk only those. If the open asset isn't in the filtered set, the arrows hide.</li>
+<li><strong>Unsaved-changes guard.</strong> Paging away, closing, Esc, or clicking the backdrop with edits pending asks before discarding.</li>
+<li>The v1.03 Prev/Next number steppers are gone — those arrows now mean records, not numbers. <em>(The Assign # button that briefly replaced them was removed in v1.05.)</em></li>
+</ul>
+</div>
+
+<h2>Changed in v1.03</h2>
+<div class="card">
+<ul>
+<li><strong>Prev button</strong> alongside Next on the unit # field. Both step through the branch series and skip numbers already in use. <em>(Replaced in v1.04 by a single Assign # button.)</em></li>
+<li>With a number in the field, <strong>Prev</strong> walks down and <strong>Next</strong> walks up from that number. With the field empty, Prev gives the lowest open number in the series and Next gives highest + 1.</li>
+<li>The series floor is <strong>101</strong>. Prev stops there rather than going lower.</li>
+<li>When editing an existing asset, its own number is excluded from the in-use set, so stepping away and back returns to it.</li>
+</ul>
+</div>
+
+<h2>Changed in v1.02</h2>
+<div class="card">
+<ul>
+<li><strong><code>tag</code> is now <code>unit_no</code></strong> — a DOT-style unit number, branch-prefixed: <code>F-107</code> Fargo, <code>B-102</code> Bismarck, <code>G-104</code> Grand Forks.</li>
+<li><strong>Next button</strong> next to the field assigns the next open number in that branch's series. Numbering starts at 101 per branch. (Prev added in v1.03.)</li>
+<li><strong>Duplicate check</strong> warns while typing and again on save. It warns, it does not block — you can override.</li>
+<li><strong>Branch mismatch warning</strong> if the prefix doesn't match the selected branch.</li>
+<li><strong>Blank is expected.</strong> Shop equipment without a DOT unit number leaves it empty and sorts to the bottom. "No unit #" filters to them, on the dashboard and in the register.</li>
+<li><strong>Natural sort</strong> — grouped by prefix, numeric within it, so F-9 comes before F-107.</li>
+</ul>
+</div>
+
+<h2>Unit # convention</h2>
+<div class="card">
+<p style="margin-top:0">Set in <code>BAKED_CONFIG</code> at the top of <code>index.html</code>:</p>
+<pre>UNIT_PREFIX: { "Fargo":"F", "Bismarck":"B", "Grand Forks":"G" },
+UNIT_SEP: "-",     // "F-107". Set "" for "F107", " " for "F 107".
+UNIT_PAD: 0        // 0 -> "F-107". 3 -> "F-107" stays, "F-7" becomes "F-007".</pre>
+<p>Change the letters or separator here and the Next button, the warnings, and sorting all follow. Existing records are not rewritten — the format only applies to numbers generated from that point on.</p>
+<p>The parser reads <code>F-107</code>, <code>F107</code>, <code>SMI 107</code>, and bare <code>107</code>, so legacy formats import and sort correctly without cleanup.</p>
+</div>
+
+<h2>Changed in v1.01</h2>
+<div class="card">
+<ul>
+<li><strong>Transaction ledger removed.</strong> No sale tracker, no buyer, no list price, no sale date, no repair/payment log. The <code>asset_txns</code> table is gone.</li>
+<li><strong>Two price fields:</strong> <code>purchase_price</code> and <code>sale_price</code>. The register computes sell-minus-purchase wherever both exist — on the row, on the detail panel, and as a portfolio total on the dashboard.</li>
+<li><strong>Branches locked to Fargo, Bismarck, Grand Forks.</strong> Free-text locations are no longer accepted; CSV rows with any other branch value import with the branch left blank.</li>
+<li><strong>Statuses:</strong> Active, Idle, Repair, Sold, Disposed. "Listed" removed.</li>
+<li><strong>Chiclet UI</strong> — silver tiles, blue highlights, pressable keys.</li>
+</ul>
+</div>
+
+<h2>Migrating your spreadsheets</h2>
+<div class="card">
+<ol>
+<li>Save each Excel sheet as CSV.</li>
+<li><strong>Import / Export</strong> tab &rarr; choose the file.</li>
+<li>Columns auto-map from your headers (Unit #, Serial No, Purchase Price, Sold For, etc.). Fix what it got wrong; set unwanted columns to <em>ignore</em>.</li>
+<li>Only <strong>Asset name</strong> is required. Rows with a blank name are skipped.</li>
+<li>Import creates new records — it never updates existing ones. Import each sheet once.</li>
+</ol>
+<p>Dates accept <code>YYYY-MM-DD</code>, <code>M/D/YYYY</code>, or <code>M/D/YY</code>. Currency accepts <code>$</code> and commas. Unrecognized statuses default to Active.</p>
+</div>
+
+<h2>Field reference</h2>
+<table>
+<thead><tr><th>Field</th><th>Notes</th></tr></thead>
+<tbody>
+<tr><td>unit_no</td><td>DOT-style unit number: <code>F-107</code>, <code>B-102</code>, <code>G-104</code>. Default sort, searchable. Blank for equipment that doesn't carry one.</td></tr>
+<tr><td>status</td><td>Active · Idle · Repair · Sold · Disposed. "Held" filter = the first three and drives every dashboard total.</td></tr>
+<tr><td>purchase_price</td><td>What you paid. Dashboard total covers held assets only.</td></tr>
+<tr><td>sale_price</td><td>What you sold it for. Fill it in and set status to Sold — that is the whole sale workflow.</td></tr>
+<tr><td>location</td><td>Fargo, Bismarck, or Grand Forks.</td></tr>
+<tr><td>loan_payoff</td><td>Current payoff balance. Maintained by hand — no payment log.</td></tr>
+<tr><td>reg_expires</td><td>Anything inside 60 days lands in "Needs attention."</td></tr>
+<tr><td>insured</td><td>Scheduled on the policy or not. Unscheduled held assets flag on the dashboard.</td></tr>
+<tr><td>title_status</td><td>In Hand · Missing · With lender · Applied for · No title.</td></tr>
+<tr><td>title_number</td><td>State title number, shown with the title state.</td></tr>
+<tr><td>gvw</td><td>Gross vehicle weight, lb.</td></tr>
+<tr><td>on_dep_schedule</td><td>Whether it appears on Devon's depreciation schedule.</td></tr>
+<tr><td>dep_location</td><td>Line on the depreciation schedule (column T of the master).</td></tr>
+<tr><td>origin</td><td>Physical Title or Old Sheet. Old Sheet marks the 17 whose titles still need tracking down; the appendix flags them red.</td></tr>
+<tr><td>title_note</td><td>Who physically holds it — lender name, safe location, DOT submission date.</td></tr>
+<tr><td>doc_url</td><td>Link to title, bill of sale, or loan doc in SharePoint.</td></tr>
+</tbody>
+</table>
+
+<h2>Technical notes</h2>
+<div class="card">
+<ul>
+<li>Single file, no build step, no CDN dependencies. Supabase via the PostgREST endpoint with <code>fetch</code> — no SDK.</li>
+<li>No <code>localStorage</code>. Live mode reads and writes Supabase on every action; local mode is memory only.</li>
+<li>Every save re-reads the table in live mode, so concurrent users converge on refresh. Last write wins.</li>
+<li>Responsive to phone width — tables collapse to labeled stacks. Visible keyboard focus, <code>Esc</code> closes the panel, reduced-motion respected.</li>
+</ul>
+</div>
+
+<h2>Not in v1.01</h2>
+<div class="card">
+Depreciation · file attachments (link out via <code>doc_url</code>) · maintenance scheduling by hours or mileage · edit audit trail · GP sync · user accounts.
+</div>
+
+<h2>Version log</h2>
+<table>
+<thead><tr><th>Ver</th><th>Changes</th></tr></thead>
+<tbody>
+<tr><td>1.22</td><td>Go-live: AR Collections Supabase credentials baked in; assets_setup.sql ships schema, RLS, and the 92-row data load in one script.</td></tr>
+<tr><td>1.21</td><td>Reconciled to updated split SMI/SFAB carrier lists. Merged duplicate 2017 GMC Sierra. Two units moved to SFAB per policy. Seven policy-only vehicles added with verify notes. 92 vehicles, 72 insured, 20 uninsured.</td></tr>
+<tr><td>1.20</td><td>Added 2027 Nordtek deck-over trailer from the COO. Trade-in unit and purchase price pending the completed bill of sale.</td></tr>
+<tr><td>1.19</td><td>Insured flags reconciled to the carrier vehicle list by VIN with fuzzy typo matching and check-digit validation. 2026 Silverado VIN corrected. Reconciliation workbook produced.</td></tr>
+<tr><td>1.18</td><td>GF-112 moved to SFAB and its duplicate row merged (same VIN). FF notes relabeled Ex-Fergus Falls branch (closed). 85 vehicles total.</td></tr>
+<tr><td>1.17</td><td>SF-prefixed units assigned to SFAB. All unassigned branches moved to Fargo.</td></tr>
+<tr><td>1.16</td><td>Baked in SMI Title Master v13 (86 vehicles) as working data. Added state, title_number, gvw, on_dep_schedule, dep_location, origin across schema, panel, cards, appendix, import, export. Title vocabulary aligned to the sheet. Grand Forks unit prefix corrected to GF. Dashboard Titles missing KPI.</td></tr>
+<tr><td>1.15</td><td>Added the Mark sold / Return to active workflow in the asset panel, distinct sold and disposed card treatment with corner ribbon, and a Sold quick filter in the register toolbar.</td></tr>
+<tr><td>1.14</td><td>Added Forklift category. Seeded two forklifts in the sample data.</td></tr>
+<tr><td>1.13</td><td>Asset cards expanded to show every populated field in a two-column spec grid, with empty fields omitted, registration and insurance warnings inline, and a labeled purchase / sell / spread footer.</td></tr>
+<tr><td>1.12</td><td>Asset list rendered as cards on narrow screens instead of stacked label/value rows. Added title_status and title_note with a chiclet picker. Added the Appendix tab: full roster grouped by branch with per-branch totals, print/PDF styling, and CSV export.</td></tr>
+<tr><td>1.11</td><td>Category filter changed from multi-select to single-select.</td></tr>
+<tr><td>1.10</td><td>Category filter changed from a horizontally scrolling row to a wrapping grid of equal-width blocks so all categories are visible without swiping.</td></tr>
+<tr><td>1.09</td><td>Categories cut to Truck, Car, Semi, Trailer, Van, SUV. Category filter converted from dropdown to a multi-select chiclet row that scrolls horizontally on mobile. Detail-panel picker flattened to one row. Sample data reseeded.</td></tr>
+<tr><td>1.08</td><td>Category changed from a dropdown to grouped chiclet buttons in the detail panel. Categories moved into CATEGORY_GROUPS as the single source for the picker, filter, and import. Non-standard imported categories preserved under an Imported group.</td></tr>
+<tr><td>1.07</td><td>Entity list cut to SMI and SFAB. Entity filter now sourced from the fixed list rather than existing data. New assets default to SMI.</td></tr>
+<tr><td>1.06</td><td>Removed the Remove button from the locked unit plate; Change is the only unlock.</td></tr>
+<tr><td>1.05</td><td>Rebuilt unit # entry as a locked plate with explicit Change / Remove, a fixed non-typable branch prefix, digits-only entry, and clickable open-number chips. Removed the Assign # button. Added free-text fallback for legacy formats.</td></tr>
+<tr><td>1.04</td><td>Prev/Next now page between asset records in the detail panel, following the register's active filter and sort, with an n-of-m counter and arrow-key support. Added an unsaved-changes guard on paging, closing, Esc, and backdrop click. Unit # number stepping collapsed to a single Assign # button.</td></tr>
+<tr><td>1.03</td><td>Added Prev button beside Next on the unit # field; both now step through the branch series in either direction, skipping numbers in use, with a floor of 101. Empty field: Prev returns the lowest open number, Next returns highest + 1.</td></tr>
+<tr><td>1.02</td><td>Renamed <code>tag</code> to <code>unit_no</code> and rebuilt it around the branch-prefixed DOT unit number convention: configurable prefix map, next-open-number assignment, duplicate and branch-mismatch warnings, natural prefix-then-numeric sort, blanks last. Added "No unit #" filters on the dashboard and register. Import now recognizes Unit, Unit #, Truck #, Fleet #, and Tag headers.</td></tr>
+<tr><td>1.01</td><td>Removed transaction ledger and all sale-tracking fields; replaced with purchase price + sell price and a computed spread. Branches restricted to Fargo, Bismarck, Grand Forks. Dropped "Listed" status. Added by-branch dashboard rollup. Rebuilt UI in chiclet style — silver gradients, rounded tiles, blue highlights. Schema reduced to one table.</td></tr>
+<tr><td>1.00</td><td>Initial build. Dashboard, asset register, transaction ledger with six action types, CSV import/export, Supabase schema.</td></tr>
+</tbody>
+</table>
+
+</main>
+</body>
+</html>
