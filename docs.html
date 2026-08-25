@@ -32,7 +32,7 @@ ol,ul{padding-left:20px;margin:6px 0}li{margin:4px 0}
 </style>
 </head>
 <body>
-<header><span class="brand">ASSET <b>REGISTER</b> — DOCS</span><span class="ver">v1.24</span><a href="index.html">Open app →</a></header>
+<header><span class="brand">ASSET <b>REGISTER</b> — DOCS</span><span class="ver">v1.26</span><a href="index.html">Open app →</a></header>
 <main>
 
 <h2>What this is</h2>
@@ -124,6 +124,11 @@ alter table assets add column if not exists origin          text;</pre></div>
 <h2>Changed in v1.20</h2>
 <div class="card">
 Added the <strong>2027 Nordtek DO102X24-14K deck-over trailer</strong> from the Certificate of Origin: VIN 2NDKB2427VL001582, GVW 14,000 lb, purchased from James Kota Inc (Jamestown, invoice 262290), COO No. 00001950 in hand, not yet titled. Funding recorded as Trade-In; insured (matches the carrier list, whose VIN for it is a character short). Purchase price and the traded-in unit weren't on the scanned bill of sale — price blank, trade-in disposition pending. 86 vehicles total.
+</div>
+
+<h2>Changed in v1.26</h2>
+<div class="card">
+Added an <strong>IRP / IFTA &#8599;</strong> chiclet at the end of the nav tray linking to Margi's compliance portal (irp.html, same repo). The portal links live at jonj360.github.io/assets/irp.html either way. (v1.25 was an Out-status experiment, reverted before adoption.)
 </div>
 
 <h2>Changed in v1.24</h2>
@@ -366,7 +371,7 @@ UNIT_PAD: 0        // 0 -> "F-107". 3 -> "F-107" stays, "F-7" becomes "F-007".</
 <thead><tr><th>Field</th><th>Notes</th></tr></thead>
 <tbody>
 <tr><td>unit_no</td><td>DOT-style unit number: <code>F-107</code>, <code>B-102</code>, <code>G-104</code>. Default sort, searchable. Blank for equipment that doesn't carry one.</td></tr>
-<tr><td>status</td><td>Active · Idle · Repair · Sold · Disposed. "Held" filter = the first three and drives every dashboard total.</td></tr>
+<tr><td>status</td><td>Active · Idle · Repair · Sold · Disposed. "Held" = the first three and drives every dashboard total.</td></tr>
 <tr><td>purchase_price</td><td>What you paid. Dashboard total covers held assets only.</td></tr>
 <tr><td>sale_price</td><td>What you sold it for. Fill it in and set status to Sold — that is the whole sale workflow.</td></tr>
 <tr><td>location</td><td>Fargo, Bismarck, or Grand Forks.</td></tr>
@@ -403,6 +408,7 @@ Depreciation · file attachments (link out via <code>doc_url</code>) · maintena
 <table>
 <thead><tr><th>Ver</th><th>Changes</th></tr></thead>
 <tbody>
+<tr><td>1.26</td><td>Nav tray link to the IRP/IFTA compliance portal. (1.25 reverted.)</td></tr>
 <tr><td>1.24</td><td>In-progress checkbox in the panel restricted to vehicles with an active computed flag, restyled as a small amber checkbox line showing the flag reason. Shared attentionFlags() drives both dashboard and panel.</td></tr>
 <tr><td>1.23</td><td>Added in_progress flag: checkbox on Needs Attention rows with instant save, yellow In-progress pill beside the red flag, shown on cards and editable in the detail panel. One-line schema addition.</td></tr>
 <tr><td>1.22</td><td>Go-live: AR Collections Supabase credentials baked in; assets_setup.sql ships schema, RLS, and the 92-row data load in one script.</td></tr>
