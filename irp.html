@@ -29,9 +29,10 @@ header{background:linear-gradient(180deg,#F6F8FB,#DFE4EC);border-bottom:1px soli
   background:linear-gradient(180deg,var(--silver1),var(--silver2));border:1px solid var(--line2);box-shadow:var(--lift)}
 .chip.live{background:linear-gradient(180deg,#EAF4EE,#CFE7DA);border-color:#A9CFBB;color:#1F6644}
 .chip.err{background:linear-gradient(180deg,#FCEEEC,#F2D9D6);border-color:#E0B6B1;color:#8A342C}
-.homebtn{width:30px;height:30px;border-radius:9px;border:1px solid var(--line2);text-decoration:none;font-size:16px;
-  background:linear-gradient(180deg,var(--silver1),var(--silver2));box-shadow:var(--lift);color:#3D4854;
+.homebtn{width:30px;height:30px;border-radius:9px;border:1px solid var(--blue2);text-decoration:none;font-size:16px;
+  background:linear-gradient(180deg,#5C90E4,var(--blue));box-shadow:0 1px 0 rgba(255,255,255,.3) inset,0 1px 3px rgba(46,111,217,.3);color:#fff;
   display:inline-flex;align-items:center;justify-content:center}
+.homebtn:hover{background:linear-gradient(180deg,#6699E8,#3376DE)}
 .homebtn:active{box-shadow:var(--press);transform:translateY(1px)}
 .synct{font-family:var(--mono);font-size:10.5px;color:var(--muted);white-space:nowrap}
 .syncbtn{width:30px;height:30px;border-radius:999px;border:1px solid var(--line2);cursor:pointer;font-size:15px;line-height:1;
@@ -114,7 +115,7 @@ input[type=text],input[type=number],input[type=date],textarea{width:100%;padding
 <header>
   <a class="homebtn" href="index.html" title="Asset Register">&#8962;</a>
   <span class="brand">FLEET <b>COMPLIANCE</b></span>
-  <span class="ver">IRP · IFTA · 2290 &nbsp; v1.01</span>
+  <span class="ver">IRP · IFTA · 2290 &nbsp; v1.02</span>
   <span class="spacer"></span>
   <span class="synct" id="syncT"></span>
   <button class="syncbtn" id="syncBtn" title="Sync now">&#10227;</button>
@@ -143,7 +144,7 @@ input[type=text],input[type=number],input[type=date],textarea{width:100%;padding
 <div id="toast"></div>
 
 <script>
-/* Fleet Compliance Portal (Margi) — v1.01
+/* Fleet Compliance Portal (Margi) — v1.02
    Same Supabase table as the Asset Register. This page PATCHes ONLY:
    plate, reg_expires, gvw, unladen, axles, on_irp, on_ifta, on_2290, compliance_notes */
 const CFG={
