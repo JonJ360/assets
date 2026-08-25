@@ -36,6 +36,14 @@ header{background:linear-gradient(180deg,#F6F8FB,#DFE4EC);border-bottom:1px soli
 .chip.local{background:linear-gradient(180deg,#FFF6E2,#F6E5BE);border-color:#E2C889;color:#7A5610}
 
 /* ---- chiclet tab tray ---- */
+.synct{font-family:var(--mono);font-size:10.5px;color:var(--muted);white-space:nowrap}
+.syncbtn{width:30px;height:30px;border-radius:999px;border:1px solid var(--line2);cursor:pointer;font-size:15px;line-height:1;
+  background:linear-gradient(180deg,var(--silver1),var(--silver2));box-shadow:var(--lift);color:#3D4854;display:inline-flex;align-items:center;justify-content:center}
+.syncbtn:hover{background:linear-gradient(180deg,#fff,#EDF1F6)}
+.syncbtn:active{box-shadow:var(--press);transform:translateY(1px)}
+.syncbtn.spin{animation:spin .8s linear infinite;pointer-events:none;opacity:.7}
+@keyframes spin{to{transform:rotate(360deg)}}
+@media(prefers-reduced-motion:reduce){.syncbtn.spin{animation:none}}
 nav.tray{position:sticky;top:53px;z-index:39;background:var(--bg);padding:10px 16px 6px}
 nav.tray .inner{display:inline-flex;gap:6px;padding:5px;border-radius:16px;background:linear-gradient(180deg,#DDE2EA,#EDF0F5);
   box-shadow:var(--press);border:1px solid var(--line2);max-width:100%;overflow:auto}
@@ -264,8 +272,10 @@ table.apx td.sm{font-size:11px;color:#55606C}
 
 <header>
   <span class="brand">ASSET <b>REGISTER</b></span>
-  <span class="ver" id="verTag">v1.26</span>
+  <span class="ver" id="verTag">v1.28</span>
   <span class="spacer"></span>
+  <span class="synct" id="syncT"></span>
+  <button class="syncbtn" id="syncBtn" title="Sync now">&#10227;</button>
   <span class="chip" id="conn">…</span>
 </header>
 
@@ -303,7 +313,7 @@ table.apx td.sm{font-size:11px;color:#55606C}
 const BAKED_CONFIG = {
   SUPABASE_URL: "https://inhwadbibwkakacdvoxu.supabase.co",   // AR Collections project
   SUPABASE_ANON_KEY: "sb_publishable_mvtNl3RxZB_V8xSserWVZA_8givexBq",
-  APP_VERSION: "1.26",
+  APP_VERSION: "1.28",
   // Unit # convention. Prefix per branch, separator, zero-padding width.
   // Fargo 107 -> "F-107". Set UNIT_PAD to 3 for "F-107", 0 for no padding.
   UNIT_PREFIX: { "Fargo":"F", "Bismarck":"B", "Grand Forks":"GF" },
@@ -327,7 +337,9 @@ const state = {
   f:{q:"",entity:"",cat:"",status:"",loc:"",nounit:false},
   sort:{k:"unit_no",dir:1},
   sel:null,
-  imp:null
+  imp:null,
+  lastSync:null,
+  syncing:false
 };
 
 /* ---------- utils ---------- */
@@ -568,8 +580,11 @@ function filtered(){
 function render(){
   $("#verTag").textContent="v"+BAKED_CONFIG.APP_VERSION;
   const c=$("#conn");
-  c.textContent = LIVE? "SUPABASE LIVE":"LOCAL — NOT SAVED";
-  c.className = "chip "+(LIVE?"live":"local");
+  if(!LIVE){ c.textContent="LOCAL — NOT SAVED"; c.className="chip local"; }
+  else if(state.syncError){ c.textContent="OFFLINE — RETRY"; c.className="chip local"; c.style.cursor="pointer"; }
+  else { c.textContent="SUPABASE LIVE"; c.className="chip live"; }
+  $("#syncT").textContent = state.lastSync? "synced "+state.lastSync.toTimeString().slice(0,8) : "";
+  $("#syncBtn").style.display = LIVE? "" : "none";
   [...document.querySelectorAll("#tabs button")].forEach(b=>b.classList.toggle("on",b.dataset.v===state.view));
   ({dash:vDash,assets:vAssets,list:vList,data:vData}[state.view])();
 }
@@ -712,6 +727,7 @@ function assetCard(a){
     cell("Title #",a.title_number?`<span class="mono">${esc(a.title_number)}</span>`:""),
     cell("Origin",esc(a.origin)),
     cell("Depr. schedule",a.on_dep_schedule?("Yes"+(a.dep_location?" — "+esc(a.dep_location):"")):"No"),
+    cell("Programs",[a.on_irp&&"IRP",a.on_ifta&&"IFTA",a.on_2290&&"2290"].filter(Boolean).join(" · ")),
     cell("Title held by",esc(a.title_note),1),
     cell("Notes",esc(a.notes),1),
     cell("Document",a.doc_url?`<a href="${esc(a.doc_url)}" target="_blank" rel="noopener">Open link</a>`:"",1)
@@ -857,9 +873,9 @@ const IMPORT_FIELDS=[
   ["vin","VIN"],["serial","Serial #"],["plate","Plate"],["entity","Entity"],["location","Branch"],["status","Status"],
   ["assigned_to","Assigned to"],["purchase_date","Purchase date"],["purchase_price","Purchase price"],["sale_price","Sell price"],
   ["vendor","Purchased from"],["funding","Funding"],["lender","Lender"],["loan_payoff","Loan payoff"],
-  ["reg_expires","Registration expires"],["title_status","Title status"],["title_note","Title held by / note"],["state","Title state"],["title_number","Title number"],["gvw","GVW"],["on_dep_schedule","On depr. schedule"],["dep_location","Depr. schedule line"],["origin","Origin"],["in_progress","In progress"],["notes","Notes"],["doc_url","Document link"]
+  ["reg_expires","Registration expires"],["title_status","Title status"],["title_note","Title held by / note"],["state","Title state"],["title_number","Title number"],["gvw","GVW"],["on_dep_schedule","On depr. schedule"],["dep_location","Depr. schedule line"],["origin","Origin"],["in_progress","In progress"],["on_irp","On IRP"],["on_ifta","On IFTA"],["on_2290","On 2290"],["notes","Notes"],["doc_url","Document link"]
 ];
-const EXPORT_COLS=["unit_no","name","category","make","model","year","vin","serial","plate","entity","location","status","assigned_to","purchase_date","purchase_price","sale_price","vendor","funding","lender","loan_payoff","reg_expires","insured","title_status","title_note","state","title_number","gvw","on_dep_schedule","dep_location","origin","in_progress","notes","doc_url"];
+const EXPORT_COLS=["unit_no","name","category","make","model","year","vin","serial","plate","entity","location","status","assigned_to","purchase_date","purchase_price","sale_price","vendor","funding","lender","loan_payoff","reg_expires","insured","title_status","title_note","state","title_number","gvw","on_dep_schedule","dep_location","origin","in_progress","on_irp","on_ifta","on_2290","notes","doc_url"];
 
 function vData(){
   $("#view").innerHTML = banner()+`
@@ -917,7 +933,7 @@ function guessField(h){
     title:"title_status",titlestatus:"title_status",titleheldby:"title_note",titlelocation:"title_note",titlenote:"title_note",
     state:"state",titlenumber:"title_number",titleno:"title_number",gvw:"gvw",grossvehicleweight:"gvw",
     ondeprsched:"on_dep_schedule",ondeprschedule:"on_dep_schedule",deprsched:"on_dep_schedule",
-    deprloc:"dep_location",deprlocation:"dep_location",deprline:"dep_location",origin:"origin",inprogress:"in_progress",workingonit:"in_progress",
+    deprloc:"dep_location",deprlocation:"dep_location",deprline:"dep_location",origin:"origin",inprogress:"in_progress",workingonit:"in_progress",onirp:"on_irp",irp:"on_irp",onifta:"on_ifta",ifta:"on_ifta",on2290:"on_2290",hvut:"on_2290",
     notes:"notes",comments:"notes",comment:"notes",link:"doc_url",url:"doc_url"};
   return m[s]||"";
 }
@@ -932,7 +948,7 @@ async function doImport(){
       let v=(r[i]||"").trim();
       if(v==="") return;
       if(["purchase_price","sale_price","loan_payoff","year","gvw"].includes(f)) v=num(v.replace(/[$,]/g,""));
-      if(["on_dep_schedule","in_progress"].includes(f)) v=/^(yes|y|x|true|1)$/i.test(v);
+      if(["on_dep_schedule","in_progress","on_irp","on_ifta","on_2290"].includes(f)) v=/^(yes|y|x|true|1)$/i.test(v);
       if(["purchase_date","reg_expires"].includes(f)) v=normDate(v);
       if(f==="status" && !STATUSES.includes(v)) v="Active";
       if(f==="location" && !LOCATIONS.includes(v)) return;
@@ -990,13 +1006,14 @@ function readForm(){
   const ins=g("insured"); if(ins!==undefined) a.insured=ins==="true";
   const ds=g("on_dep_schedule"); if(ds!==undefined) a.on_dep_schedule=ds==="true";
   const ipEl=$("#f_in_progress"); if(ipEl) a.in_progress=ipEl.checked;
+  ["on_irp","on_ifta","on_2290"].forEach(k=>{const el=$("#f_"+k); if(el) a[k]=el.value==="true";});
   return a;
 }
 function formDirty(){
   if(!state.sel || !$("#f_name")) return false;
   const cur=readForm(), base=state.sel;
   const same=v=>(v==null||v==="")?"":String(v);
-  return TEXT_FIELDS.concat(NUM_FIELDS,DATE_FIELDS,["insured","on_dep_schedule","in_progress"]).some(k=>same(cur[k])!==same(base[k]));
+  return TEXT_FIELDS.concat(NUM_FIELDS,DATE_FIELDS,["insured","on_dep_schedule","in_progress","on_irp","on_ifta","on_2290"]).some(k=>same(cur[k])!==same(base[k]));
 }
 function confirmDiscard(){
   return !formDirty() || confirm("You have unsaved changes on this asset. Discard them?");
@@ -1234,6 +1251,18 @@ function openAsset(id){
     </div>
   </fieldset>
 
+  <fieldset class="fs"><legend>Compliance programs</legend>
+    <input type="hidden" id="f_on_irp" value="${a.on_irp?"true":"false"}">
+    <input type="hidden" id="f_on_ifta" value="${a.on_ifta?"true":"false"}">
+    <input type="hidden" id="f_on_2290" value="${a.on_2290?"true":"false"}">
+    <div class="cats" style="margin-bottom:10px">
+      <button type="button" class="cat${a.on_irp?" on":""}" data-prog="on_irp">IRP</button>
+      <button type="button" class="cat${a.on_ifta?" on":""}" data-prog="on_ifta">IFTA</button>
+      <button type="button" class="cat${a.on_2290?" on":""}" data-prog="on_2290">2290</button>
+    </div>
+    <p class="hint" style="margin-top:-4px;margin-bottom:10px">Saved with the form. Plates, weights, and renewals live in the <a href="irp.html">IRP / IFTA portal</a>.</p>
+  </fieldset>
+
   <fieldset class="fs"><legend>Notes</legend>
     <label class="f"><span>Notes</span><textarea id="f_notes" rows="3">${esc(a.notes||"")}</textarea></label>
     <label class="f"><span>Document link</span><input type="text" id="f_doc_url" value="${esc(a.doc_url||"")}" placeholder="SharePoint / OneDrive URL"></label>
@@ -1272,6 +1301,11 @@ function openAsset(id){
   mountUnitField(id);
   mountChiclets("f_category","catWrap",CATEGORIES,{strayFrom:"category"});
   mountChiclets("f_title_status","titleWrap",TITLE_STATUSES,{strayFrom:"title_status"});
+  $("#sheetBody").querySelectorAll("[data-prog]").forEach(b=>b.onclick=()=>{
+    const h=$("#f_"+b.dataset.prog);
+    h.value = h.value==="true" ? "false" : "true";
+    b.classList.toggle("on", h.value==="true");
+  });
 
   if(id) $("#delA").onclick=async()=>{
     if(!confirm("Delete this asset? This cannot be undone.")) return;
@@ -1291,14 +1325,36 @@ async function saveSheet(){
   const isNew=!a.id;
   try{
     await DB.save(a);
-    if(LIVE) await DB.load();
+    if(LIVE){ await DB.load(); state.lastSync=new Date(); }
     closeSheet(true); toast(isNew?"Asset created":"Saved"); render();
   }catch(e){ toast(e.message,1); }
 }
 
+/* ---------- sync ---------- */
+async function syncNow(){
+  if(!LIVE || state.syncing) return;
+  state.syncing=true; $("#syncBtn").classList.add("spin");
+  try{
+    await DB.load();
+    state.lastSync=new Date(); state.syncError=false;
+    render(); toast("Synced");
+  }catch(e){
+    state.syncError=true; render(); toast("Sync failed: "+e.message,1);
+  }finally{
+    state.syncing=false; $("#syncBtn").classList.remove("spin");
+  }
+}
+$("#syncBtn").addEventListener("click",syncNow);
+$("#conn").addEventListener("click",()=>{ if(state.syncError) syncNow(); });
+document.addEventListener("visibilitychange",()=>{
+  if(document.visibilityState==="visible" && LIVE && state.lastSync && (Date.now()-state.lastSync.getTime())>60000
+     && !$("#sheet").classList.contains("on")) syncNow();
+});
+
 /* ---------- boot ---------- */
 (async function(){
-  try{ await DB.load(); }catch(e){ toast("Load failed: "+e.message,1); }
+  try{ await DB.load(); if(LIVE) state.lastSync=new Date(); }
+  catch(e){ state.syncError=true; toast("Load failed: "+e.message,1); }
   render();
 })();
 </script>

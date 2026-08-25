@@ -32,7 +32,7 @@ ol,ul{padding-left:20px;margin:6px 0}li{margin:4px 0}
 </style>
 </head>
 <body>
-<header><span class="brand">ASSET <b>REGISTER</b> — DOCS</span><span class="ver">v1.26</span><a href="index.html">Open app →</a></header>
+<header><span class="brand">ASSET <b>REGISTER</b> — DOCS</span><span class="ver">v1.28</span><a href="index.html">Open app →</a></header>
 <main>
 
 <h2>What this is</h2>
@@ -124,6 +124,27 @@ alter table assets add column if not exists origin          text;</pre></div>
 <h2>Changed in v1.20</h2>
 <div class="card">
 Added the <strong>2027 Nordtek DO102X24-14K deck-over trailer</strong> from the Certificate of Origin: VIN 2NDKB2427VL001582, GVW 14,000 lb, purchased from James Kota Inc (Jamestown, invoice 262290), COO No. 00001950 in hand, not yet titled. Funding recorded as Trade-In; insured (matches the carrier list, whose VIN for it is a character short). Purchase price and the traded-in unit weren't on the scanned bill of sale — price blank, trade-in disposition pending. 86 vehicles total.
+</div>
+
+<h2>Changed in v1.28</h2>
+<div class="card">
+<ul>
+<li><strong>Compliance programs on the asset panel:</strong> IRP / IFTA / 2290 chiclet toggles in their own section, saved with the form. That's how a vehicle gets enrolled from the register; enrollment from the portal still works via its instant toggles.</li>
+<li>Cards show a Programs line ("IRP · IFTA · 2290") when any are on. Export/import carry the three flags.</li>
+<li><strong>Requires margi_portal_setup.sql to have been run first</strong> — the register now writes those columns, so pushing 1.28 without the columns breaks saves.</li>
+<li><strong>Portal v1.01:</strong> Home button (top-left, back to the register) and the same sync cluster as the register — live chip, synced stamp, spinning &#10227; button, tap-to-retry offline, auto re-sync on tab focus.</li>
+</ul>
+</div>
+
+<h2>Changed in v1.27</h2>
+<div class="card">
+<p style="margin-top:0"><strong>Sync cluster in the top-right</strong>, AR CRM style: status chip, "synced HH:MM:SS" stamp, and a &#10227; button for an on-demand pull.</p>
+<ul>
+<li><strong>&#10227; Sync now</strong> re-reads the table and re-renders; the button spins while running. Picks up anything Margi toggled from the portal.</li>
+<li><strong>Auto re-sync on return:</strong> when the tab regains focus and the last sync is over a minute old, it refreshes itself — unless the edit panel is open, so it never stomps a form mid-edit.</li>
+<li><strong>Offline handling:</strong> a failed load flips the chip to OFFLINE — RETRY; tapping it retries.</li>
+<li>Every save already re-reads in live mode; it now refreshes the stamp too.</li>
+</ul>
 </div>
 
 <h2>Changed in v1.26</h2>
@@ -408,6 +429,8 @@ Depreciation · file attachments (link out via <code>doc_url</code>) · maintena
 <table>
 <thead><tr><th>Ver</th><th>Changes</th></tr></thead>
 <tbody>
+<tr><td>1.28</td><td>IRP/IFTA/2290 toggles in the register's asset panel and on cards; flags in export/import. Portal v1.01 adds Home and the matching sync cluster. Requires the portal SQL columns.</td></tr>
+<tr><td>1.27</td><td>Top-right sync cluster: live chip, last-synced timestamp, on-demand sync button with spinner, auto re-sync on tab focus after 60s (suppressed while editing), tap-to-retry offline state.</td></tr>
 <tr><td>1.26</td><td>Nav tray link to the IRP/IFTA compliance portal. (1.25 reverted.)</td></tr>
 <tr><td>1.24</td><td>In-progress checkbox in the panel restricted to vehicles with an active computed flag, restyled as a small amber checkbox line showing the flag reason. Shared attentionFlags() drives both dashboard and panel.</td></tr>
 <tr><td>1.23</td><td>Added in_progress flag: checkbox on Needs Attention rows with instant save, yellow In-progress pill beside the red flag, shown on cards and editable in the detail panel. One-line schema addition.</td></tr>
