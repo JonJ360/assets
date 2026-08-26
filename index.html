@@ -145,6 +145,7 @@ fieldset.fs>legend{font-size:10.5px;text-transform:uppercase;letter-spacing:.08e
 .ipline{display:flex;align-items:flex-start;gap:8px;margin:0 0 12px;padding:9px 11px;border-radius:9px;cursor:pointer;
   background:linear-gradient(180deg,#FFF9EA,#FBEFD6);border:1px solid #E7CF9C;font-size:12.5px;line-height:1.4}
 .ipline input{width:18px;height:18px;accent-color:#C9861F;flex:0 0 auto;margin-top:1px;cursor:pointer}
+.ro-dim{opacity:.65}
 .ipbox input{width:19px;height:19px;accent-color:#C9861F;cursor:pointer}
 .acard{position:relative}
 .acard.gone{background:linear-gradient(180deg,#FBFAFD,#EEECF3);border-color:#D5CFE2}
@@ -272,10 +273,11 @@ table.apx td.sm{font-size:11px;color:#55606C}
 
 <header>
   <span class="brand">ASSET <b>REGISTER</b></span>
-  <span class="ver" id="verTag">v1.31</span>
+  <span class="ver" id="verTag">v1.34</span>
   <span class="spacer"></span>
   <span class="synct" id="syncT"></span>
   <button class="syncbtn" id="syncBtn" title="Sync now">&#10227;</button>
+  <button class="chip" id="whoami" title="Sign out" style="cursor:pointer;border:1px solid var(--line2);display:none"></button>
   <span class="chip" id="conn">…</span>
 </header>
 
@@ -303,6 +305,16 @@ table.apx td.sm{font-size:11px;color:#55606C}
   <div class="sf" id="sheetFoot"></div>
 </aside>
 
+<div class="scrim" id="loginScrim" style="z-index:70;backdrop-filter:blur(14px);-webkit-backdrop-filter:blur(14px);background:rgba(215,221,230,.55)"></div>
+<div id="loginBox" style="display:none;position:fixed;top:50%;left:50%;transform:translate(-50%,-50%);z-index:71;width:min(360px,92vw);
+  background:var(--bg);border:1px solid var(--line2);border-radius:16px;box-shadow:0 12px 40px rgba(20,30,44,.35);padding:22px">
+  <div style="font-weight:750;letter-spacing:.06em;font-size:15px;margin-bottom:2px">ASSET <span style="color:var(--blue)">REGISTER</span></div>
+  <div class="hint" style="margin-bottom:14px">Sign in to continue</div>
+  <label class="f"><span>Email</span><input type="email" id="li_email" autocomplete="username"></label>
+  <label class="f"><span>PIN</span><input type="password" id="li_pin" inputmode="numeric" autocomplete="current-password"></label>
+  <div id="li_err" style="color:var(--red);font-size:12.5px;min-height:16px;margin-bottom:6px"></div>
+  <button class="btn" id="li_go" style="width:100%">Sign in</button>
+</div>
 <div id="toast"></div>
 
 <script>
@@ -314,7 +326,7 @@ table.apx td.sm{font-size:11px;color:#55606C}
 const BAKED_CONFIG = {
   SUPABASE_URL: "https://inhwadbibwkakacdvoxu.supabase.co",   // AR Collections project
   SUPABASE_ANON_KEY: "sb_publishable_mvtNl3RxZB_V8xSserWVZA_8givexBq",
-  APP_VERSION: "1.31",
+  APP_VERSION: "1.34",
   // Unit # convention. Prefix per branch, separator, zero-padding width.
   // Fargo 107 -> "F-107". Set UNIT_PAD to 3 for "F-107", 0 for no padding.
   UNIT_PREFIX: { "Fargo":"F", "Bismarck":"B", "Grand Forks":"GF" },
@@ -416,18 +428,60 @@ function unitSortKey(u){
   return p.pre+"|"+(p.n==null? "\uffff" : String(p.n).padStart(8,"0"));
 }
 
+/* ---------- auth ---------- */
+const EDITORS = ["jonj@360-llc.com","margi@360-llc.com"];
+const canEdit=()=> !LIVE || AUTH.isEditor();
+const AUTH_KEY = "assets-auth-v1";
+const AUTH = {
+  s: null,
+  load(){ try{ this.s=JSON.parse(localStorage.getItem(AUTH_KEY)||"null"); }catch(e){ this.s=null; } return this.s; },
+  save(x){ this.s=x; if(x) localStorage.setItem(AUTH_KEY,JSON.stringify(x)); else localStorage.removeItem(AUTH_KEY); },
+  email(){ return this.s?this.s.email:null; },
+  isEditor(){ return !!this.s && EDITORS.includes(this.s.email.toLowerCase()); },
+  async signIn(email,pin){
+    const r=await fetch(BAKED_CONFIG.SUPABASE_URL+"/auth/v1/token?grant_type=password",{
+      method:"POST",headers:{apikey:BAKED_CONFIG.SUPABASE_ANON_KEY,"Content-Type":"application/json"},
+      body:JSON.stringify({email,password:pin})});
+    const j=await r.json();
+    if(!r.ok) throw new Error(j.error_description||j.msg||"Sign-in failed");
+    this.save({email:(j.user&&j.user.email||email).toLowerCase(),access_token:j.access_token,refresh_token:j.refresh_token,exp:Date.now()+ (j.expires_in-60)*1000});
+  },
+  async refresh(){
+    if(!this.s) return false;
+    const r=await fetch(BAKED_CONFIG.SUPABASE_URL+"/auth/v1/token?grant_type=refresh_token",{
+      method:"POST",headers:{apikey:BAKED_CONFIG.SUPABASE_ANON_KEY,"Content-Type":"application/json"},
+      body:JSON.stringify({refresh_token:this.s.refresh_token})});
+    if(!r.ok){ this.save(null); return false; }
+    const j=await r.json();
+    this.save({email:(j.user&&j.user.email||this.s.email).toLowerCase(),access_token:j.access_token,refresh_token:j.refresh_token,exp:Date.now()+(j.expires_in-60)*1000});
+    return true;
+  },
+  async token(){
+    if(!this.s) return null;
+    if(Date.now()>this.s.exp) await this.refresh();
+    return this.s?this.s.access_token:null;
+  },
+  signOut(){ this.save(null); }
+};
+
 /* ---------- data layer ---------- */
 async function sb(path, opt={}){
+  const tok = await AUTH.token();
   const r = await fetch(BAKED_CONFIG.SUPABASE_URL+"/rest/v1/"+path, {
     method: opt.method||"GET",
     headers:{
       apikey: BAKED_CONFIG.SUPABASE_ANON_KEY,
-      Authorization:"Bearer "+BAKED_CONFIG.SUPABASE_ANON_KEY,
+      Authorization:"Bearer "+(tok||BAKED_CONFIG.SUPABASE_ANON_KEY),
       "Content-Type":"application/json",
       Prefer: opt.prefer||"return=representation"
     },
     body: opt.body? JSON.stringify(opt.body): undefined
   });
+  if(r.status===401 && AUTH.s){
+    const ok=await AUTH.refresh();
+    if(ok) return sb(path,opt);
+    showLogin(); throw new Error("Session expired — sign in again");
+  }
   if(!r.ok) throw new Error((await r.text()).slice(0,300));
   return r.status===204 ? null : r.json();
 }
@@ -586,6 +640,11 @@ function render(){
   else { c.textContent="SUPABASE LIVE"; c.className="chip live"; }
   $("#syncT").textContent = state.lastSync? "synced "+state.lastSync.toTimeString().slice(0,8) : "";
   $("#syncBtn").style.display = LIVE? "" : "none";
+  const who=$("#whoami");
+  if(who){
+    if(AUTH.email()){ who.style.display=""; who.textContent=(AUTH.isEditor()?"":"👁 ")+AUTH.email().split("@")[0]+" ×"; }
+    else who.style.display="none";
+  }
   [...document.querySelectorAll("#tabs button")].forEach(b=>b.classList.toggle("on",b.dataset.v===state.view));
   ({dash:vDash,assets:vAssets,list:vList,hist:vHist,data:vData}[state.view])();
 }
@@ -662,6 +721,7 @@ function vDash(){
   </div></div>`;
 
   $("#view").querySelectorAll("[data-ip]").forEach(cb=>{
+    if(!canEdit()){ cb.disabled=true; return; }
     cb.closest(".ipbox").addEventListener("click",e=>e.stopPropagation());
     cb.addEventListener("click",e=>e.stopPropagation());
     cb.addEventListener("change",async e=>{
@@ -769,8 +829,12 @@ function vAssets(){
       <button class="btn ${state.f.status==="Sold"?"":"ghost"} sm" id="fsold">Sold</button>
       <button class="btn ${state.f.nounit?"":"ghost"} sm" id="fnounit">No unit #</button>
       <button class="btn ghost sm" id="fclear">Clear</button>
+      <select id="fsortk" title="Sort by">
+        ${[["unit_no","Sort: Unit #"],["year","Sort: Year"],["name","Sort: Name"],["purchase_date","Sort: Purchased"],["purchase_price","Sort: Purchase $"],["sale_price","Sort: Sell $"],["status","Sort: Status"],["location","Sort: Branch"]].map(([k,l])=>`<option value="${k}"${state.sort.k===k?" selected":""}>${l}</option>`).join("")}
+      </select>
+      <button class="btn ghost sm" id="fsortd" title="Flip direction">${state.sort.dir>0?"▲ Asc":"▼ Desc"}</button>
     </div>
-    <button class="btn" id="newAsset">+ New asset</button>
+    ${canEdit()?`<button class="btn" id="newAsset">+ New asset</button>`:""}
     <div class="catfilter" id="fcats">${cats.map(c=>`<button type="button" class="cat sm${state.f.cat===c?" on":""}" data-c="${esc(c)}">${esc(c)}</button>`).join("")}</div>
   </div>
   <div class="tb flush">
@@ -955,7 +1019,7 @@ function drawMap(){
   }).join("")}</div>
   <div class="filters" style="margin-bottom:12px"><button class="btn" id="runImp">Import ${rows.length} rows</button><span class="hint">Rows without an asset name are skipped.</span></div>
   </fieldset>`;
-  $("#runImp").onclick=doImport;
+  const ri=$("#runImp"); if(ri){ if(!canEdit()){ ri.disabled=true; ri.title="View-only account"; } else ri.onclick=doImport; }
 }
 function guessField(h){
   const s=String(h||"").toLowerCase().replace(/[^a-z]/g,"");
@@ -1313,13 +1377,18 @@ function openAsset(id){
   </fieldset>`;
 
   const isSold = a.status==="Sold";
-  $("#sheetFoot").innerHTML=`<button class="btn" id="saveA">${id?"Save changes":"Create asset"}</button>
+  $("#sheetFoot").innerHTML= !canEdit() ? `<span class="hint" style="align-self:center">View only — your account can't make changes.</span><button class="btn ghost" id="closeA2">Close</button>` : `<button class="btn" id="saveA">${id?"Save changes":"Create asset"}</button>
     ${id?`<button class="btn ${isSold?"ghost":"warn"}" id="soldA">${isSold?"Return to active":"Mark sold"}</button>`:""}
     <button class="btn ghost" id="cancelA">Cancel</button>
     <span class="spacer"></span>
-    ${id?`<button class="btn danger" id="delA">Delete</button>`:""}`;
-  $("#saveA").onclick=saveSheet;
-  $("#cancelA").onclick=()=>closeSheet();
+    ${id&&canEdit()?`<button class="btn danger" id="delA">Delete</button>`:""}`;
+  const sv=$("#saveA"); if(sv) sv.onclick=saveSheet;
+  const cn=$("#cancelA"); if(cn) cn.onclick=()=>closeSheet();
+  const c2=$("#closeA2"); if(c2) c2.onclick=()=>closeSheet(true);
+  if(!canEdit()){
+    $("#sheetBody").querySelectorAll("input,select,textarea,button.cat,[data-prog]").forEach(el=>{ el.disabled=true; el.classList&&el.classList.add("ro-dim"); });
+    $("#sheetBody").querySelectorAll("[data-ip]").forEach(el=>el.disabled=true);
+  }
   const soldBtn=$("#soldA");
   if(soldBtn) soldBtn.onclick=()=>{
     const st=$("#f_status"), sp=$("#f_sale_price"), fs=$("#priceFs");
@@ -1351,7 +1420,7 @@ function openAsset(id){
     b.classList.toggle("on", h.value==="true");
   });
 
-  if(id) $("#delA").onclick=async()=>{
+  const db_=$("#delA"); if(id&&db_) db_.onclick=async()=>{
     if(!confirm("Delete this asset? This cannot be undone.")) return;
     try{ await DB.del(id); closeSheet(true); toast("Asset deleted"); render(); }catch(e){ toast(e.message,1); }
   };
@@ -1381,6 +1450,29 @@ async function saveSheet(){
   }catch(e){ toast(e.message,1); }
 }
 
+/* ---------- login ---------- */
+function showLogin(){
+  $("#loginScrim").classList.add("on");
+  $("#loginBox").style.display="block";
+  $("#li_email").value=AUTH.email()||"";
+  $("#li_err").textContent="";
+  setTimeout(()=>$(AUTH.email()?"#li_pin":"#li_email").focus(),50);
+}
+function hideLogin(){ $("#loginScrim").classList.remove("on"); $("#loginBox").style.display="none"; }
+async function doLogin(){
+  const em=$("#li_email").value.trim().toLowerCase(), pin=$("#li_pin").value;
+  if(!em||!pin){ $("#li_err").textContent="Email and PIN required"; return; }
+  $("#li_go").disabled=true;
+  try{
+    await AUTH.signIn(em,pin);
+    hideLogin();
+    await syncNow();
+    render();
+  }catch(e){ $("#li_err").textContent=e.message; }
+  finally{ $("#li_go").disabled=false; }
+}
+document.addEventListener("DOMContentLoaded",()=>{});
+ 
 /* ---------- sync ---------- */
 async function syncNow(){
   if(!LIVE || state.syncing) return;
@@ -1405,7 +1497,12 @@ document.addEventListener("visibilitychange",()=>{
 window.addEventListener("pageshow",e=>{ if(e.persisted && LIVE) syncNow(); });
 
 /* ---------- boot ---------- */
+$("#li_go").addEventListener("click",doLogin);
+$("#li_pin").addEventListener("keydown",e=>{ if(e.key==="Enter") doLogin(); });
+$("#whoami").addEventListener("click",()=>{ if(confirm("Sign out?")){ AUTH.signOut(); location.reload(); } });
 (async function(){
+  AUTH.load();
+  if(LIVE && !AUTH.s){ render(); showLogin(); return; }
   try{ await DB.load(); if(LIVE) state.lastSync=new Date(); }
   catch(e){ state.syncError=true; toast("Load failed: "+e.message,1); }
   render();

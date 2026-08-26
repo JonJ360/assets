@@ -32,7 +32,7 @@ ol,ul{padding-left:20px;margin:6px 0}li{margin:4px 0}
 </style>
 </head>
 <body>
-<header><span class="brand">ASSET <b>REGISTER</b> — DOCS</span><span class="ver">v1.31</span><a href="index.html">Open app →</a></header>
+<header><span class="brand">ASSET <b>REGISTER</b> — DOCS</span><span class="ver">v1.34</span><a href="index.html">Open app →</a></header>
 <main>
 
 <h2>What this is</h2>
@@ -124,6 +124,27 @@ alter table assets add column if not exists origin          text;</pre></div>
 <h2>Changed in v1.20</h2>
 <div class="card">
 Added the <strong>2027 Nordtek DO102X24-14K deck-over trailer</strong> from the Certificate of Origin: VIN 2NDKB2427VL001582, GVW 14,000 lb, purchased from James Kota Inc (Jamestown, invoice 262290), COO No. 00001950 in hand, not yet titled. Funding recorded as Trade-In; insured (matches the carrier list, whose VIN for it is a character short). Purchase price and the traded-in unit weren't on the scanned bill of sale — price blank, trade-in disposition pending. 86 vehicles total.
+</div>
+
+<h2>Changed in v1.34</h2>
+<div class="card">
+Sign-in screen now heavily blurs and frosts the page behind it on both the register and the portal. (No data was exposed — signed out, the database returns nothing, so the background was empty scaffolding — but the layout no longer shows either.)
+</div>
+
+<h2>Changed in v1.33</h2>
+<div class="card">
+<p style="margin-top:0"><strong>Authentication + lockdown.</strong> Both the register and the portal now require sign-in (email + PIN, same accounts as the AR CRM — one user pool per Supabase project).</p>
+<ul>
+<li><strong>Editors:</strong> jonj@360-llc.com, margi@360-llc.com — full edit everywhere. Everyone else signed in is <strong>view-only</strong>: forms disabled, no save/delete/import, no program toggles, no in-progress checkboxes. A viewer account can be added in Supabase Auth anytime with no code change.</li>
+<li>Header shows the signed-in account (&#128065; prefix = view-only); tap it to sign out. Sessions persist and refresh automatically.</li>
+<li><strong>assets_rls.sql</strong> (run AFTER deploying both pages): anon loses all access to assets and history — the key in the public page source opens nothing; signed-in users read; only the editor emails write; history remains trigger-write-only.</li>
+<li>Deploy order matters: pages first, SQL second. Running the SQL first locks out the live v1.32 pages for everyone.</li>
+</ul>
+</div>
+
+<h2>Changed in v1.32</h2>
+<div class="card">
+<strong>Sort control in the filter bar</strong> — "Sort:" dropdown (Unit #, Year, Name, Purchased, Purchase $, Sell $, Status, Branch) plus an ▲/▼ direction button. Works on mobile cards, where the table's clickable headers aren't available; on desktop both controls stay in sync since they share the same sort state. Portal pinned to v1.32.
 </div>
 
 <h2>Changed in v1.31</h2>
@@ -450,6 +471,9 @@ Depreciation · file attachments (link out via <code>doc_url</code>) · maintena
 <table>
 <thead><tr><th>Ver</th><th>Changes</th></tr></thead>
 <tbody>
+<tr><td>1.34</td><td>Frosted-blur backdrop on the sign-in screen, both pages.</td></tr>
+<tr><td>1.33</td><td>Sign-in required (Supabase Auth, shared user pool with AR CRM). Editor allow-list (jonj, margi) enforced in RLS; all other accounts view-only. assets_rls.sql removes anon access entirely. Portal v1.33 in lockstep.</td></tr>
+<tr><td>1.32</td><td>Sort dropdown + direction toggle in the filter bar so mobile card view can sort (Year included). Shares state with the table headers.</td></tr>
 <tr><td>1.31</td><td>Year column in the Assets table, click-sortable both directions. Portal version pinned in lockstep.</td></tr>
 <tr><td>1.30</td><td>Audit trail: database trigger logs all changes to asset_history (read-only from apps). History tab (last 150 fleet-wide) and per-asset history in the panel.</td></tr>
 <tr><td>1.29</td><td>Auto re-sync on back/forward-cache restore in both the register and the portal (pageshow persisted handler).</td></tr>
