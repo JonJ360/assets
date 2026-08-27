@@ -238,9 +238,14 @@ table.apx td.sm{font-size:11px;color:#55606C}
 /* ---- slide-over ---- */
 .scrim{position:fixed;inset:0;background:rgba(26,36,48,.42);z-index:50;display:none}
 .scrim.on{display:block}
-.sheet{position:fixed;top:0;right:0;bottom:0;width:min(620px,100%);background:var(--bg);z-index:51;
-  transform:translateX(100%);transition:transform .18s ease;display:flex;flex-direction:column;box-shadow:-8px 0 24px rgba(20,30,44,.18)}
-.sheet.on{transform:none}
+.sheet{position:fixed;top:50%;left:50%;width:min(680px,94vw);max-height:92vh;background:var(--bg);z-index:51;
+  border-radius:16px;overflow:hidden;transform:translate(-50%,-50%) scale(.97);opacity:0;pointer-events:none;
+  transition:opacity .16s ease,transform .16s ease;display:flex;flex-direction:column;box-shadow:0 18px 60px rgba(20,30,44,.35)}
+.sheet.on{transform:translate(-50%,-50%) scale(1);opacity:1;pointer-events:auto}
+@media(max-width:640px){
+  .sheet{top:0;left:0;width:100%;height:100%;max-height:none;border-radius:0;transform:translateY(10px)}
+  .sheet.on{transform:none}
+}
 .sheet .sh{padding:12px 16px;background:linear-gradient(180deg,#F6F8FB,#E4E9F0);border-bottom:1px solid var(--line2);display:flex;align-items:center;gap:10px}
 .sheet .sh h2{font-size:15px;flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
 .sheet .sh .navpos{font-family:var(--mono);font-size:11px;color:var(--muted);white-space:nowrap}
@@ -273,7 +278,7 @@ table.apx td.sm{font-size:11px;color:#55606C}
 
 <header>
   <span class="brand">ASSET <b>REGISTER</b></span>
-  <span class="ver" id="verTag">v1.34</span>
+  <span class="ver" id="verTag">v1.36</span>
   <span class="spacer"></span>
   <span class="synct" id="syncT"></span>
   <button class="syncbtn" id="syncBtn" title="Sync now">&#10227;</button>
@@ -305,6 +310,21 @@ table.apx td.sm{font-size:11px;color:#55606C}
   <div class="sf" id="sheetFoot"></div>
 </aside>
 
+<div class="scrim" id="soldScrim" style="z-index:60"></div>
+<div id="soldBox" style="display:none;position:fixed;top:50%;left:50%;transform:translate(-50%,-50%);z-index:61;width:min(380px,92vw);
+  background:var(--bg);border:1px solid var(--line2);border-radius:16px;box-shadow:0 12px 40px rgba(20,30,44,.35);padding:20px">
+  <div style="font-weight:750;font-size:14.5px;margin-bottom:12px">Record the sale</div>
+  <label class="f"><span>Sold to</span><input type="text" id="sd_to" placeholder="Buyer name"></label>
+  <div class="grid2">
+    <label class="f"><span>Sale price</span><input type="number" step="0.01" id="sd_price"></label>
+    <label class="f"><span>Sale date</span><input type="date" id="sd_date"></label>
+  </div>
+  <div style="display:flex;gap:8px;margin-top:6px">
+    <button class="btn" id="sd_ok" style="flex:1">Mark sold</button>
+    <button class="btn ghost" id="sd_cancel">Cancel</button>
+  </div>
+  <p class="hint" style="margin:10px 0 0">Fills the form — nothing is saved until you hit Save changes.</p>
+</div>
 <div class="scrim" id="loginScrim" style="z-index:70;backdrop-filter:blur(14px);-webkit-backdrop-filter:blur(14px);background:rgba(215,221,230,.55)"></div>
 <div id="loginBox" style="display:none;position:fixed;top:50%;left:50%;transform:translate(-50%,-50%);z-index:71;width:min(360px,92vw);
   background:var(--bg);border:1px solid var(--line2);border-radius:16px;box-shadow:0 12px 40px rgba(20,30,44,.35);padding:22px">
@@ -326,7 +346,7 @@ table.apx td.sm{font-size:11px;color:#55606C}
 const BAKED_CONFIG = {
   SUPABASE_URL: "https://inhwadbibwkakacdvoxu.supabase.co",   // AR Collections project
   SUPABASE_ANON_KEY: "sb_publishable_mvtNl3RxZB_V8xSserWVZA_8givexBq",
-  APP_VERSION: "1.34",
+  APP_VERSION: "1.36",
   // Unit # convention. Prefix per branch, separator, zero-padding width.
   // Fargo 107 -> "F-107". Set UNIT_PAD to 3 for "F-107", 0 for no padding.
   UNIT_PREFIX: { "Fargo":"F", "Bismarck":"B", "Grand Forks":"GF" },
@@ -789,6 +809,7 @@ function assetCard(a){
     cell("Origin",esc(a.origin)),
     cell("Depr. schedule",a.on_dep_schedule?("Yes"+(a.dep_location?" — "+esc(a.dep_location):"")):"No"),
     cell("Programs",[a.on_irp&&"IRP",a.on_ifta&&"IFTA",a.on_2290&&"2290"].filter(Boolean).join(" · ")),
+    cell("Sold",a.status==="Sold"?[a.sold_to,a.sale_date?dt(a.sale_date):null,a.sale_price!=null?money(a.sale_price):null].filter(Boolean).join(" · "):""),
     cell("Title held by",esc(a.title_note),1),
     cell("Notes",esc(a.notes),1),
     cell("Document",a.doc_url?`<a href="${esc(a.doc_url)}" target="_blank" rel="noopener">Open link</a>`:"",1)
@@ -977,11 +998,11 @@ function vList(){
 const IMPORT_FIELDS=[
   ["unit_no","Unit #"],["name","Asset name"],["category","Category"],["make","Make"],["model","Model"],["year","Year"],
   ["vin","VIN"],["serial","Serial #"],["plate","Plate"],["entity","Entity"],["location","Branch"],["status","Status"],
-  ["assigned_to","Assigned to"],["purchase_date","Purchase date"],["purchase_price","Purchase price"],["sale_price","Sell price"],
+  ["assigned_to","Assigned to"],["purchase_date","Purchase date"],["purchase_price","Purchase price"],["sale_price","Sell price"],["sold_to","Sold to"],["sale_date","Sale date"],
   ["vendor","Purchased from"],["funding","Funding"],["lender","Lender"],["loan_payoff","Loan payoff"],
   ["reg_expires","Registration expires"],["title_status","Title status"],["title_note","Title held by / note"],["state","Title state"],["title_number","Title number"],["gvw","GVW"],["on_dep_schedule","On depr. schedule"],["dep_location","Depr. schedule line"],["origin","Origin"],["in_progress","In progress"],["on_irp","On IRP"],["on_ifta","On IFTA"],["on_2290","On 2290"],["notes","Notes"],["doc_url","Document link"]
 ];
-const EXPORT_COLS=["unit_no","name","category","make","model","year","vin","serial","plate","entity","location","status","assigned_to","purchase_date","purchase_price","sale_price","vendor","funding","lender","loan_payoff","reg_expires","insured","title_status","title_note","state","title_number","gvw","on_dep_schedule","dep_location","origin","in_progress","on_irp","on_ifta","on_2290","notes","doc_url"];
+const EXPORT_COLS=["unit_no","name","category","make","model","year","vin","serial","plate","entity","location","status","assigned_to","purchase_date","purchase_price","sale_price","vendor","funding","lender","sold_to","loan_payoff","reg_expires","insured","title_status","title_note","state","title_number","gvw","on_dep_schedule","dep_location","origin","in_progress","on_irp","on_ifta","on_2290","sold_to","sale_date","notes","doc_url"];
 
 function vData(){
   $("#view").innerHTML = banner()+`
@@ -1099,9 +1120,9 @@ function dl(name,text){
   a.href=u; a.download=name; a.click(); setTimeout(()=>URL.revokeObjectURL(u),1500);
 }
 
-const TEXT_FIELDS=["unit_no","name","category","make","model","vin","serial","plate","entity","location","status","assigned_to","vendor","funding","lender","title_status","title_note","state","title_number","dep_location","origin","notes","doc_url"];
+const TEXT_FIELDS=["unit_no","name","category","make","model","vin","serial","plate","entity","location","status","assigned_to","vendor","funding","lender","sold_to","title_status","title_note","state","title_number","dep_location","origin","notes","doc_url"];
 const NUM_FIELDS=["year","purchase_price","sale_price","loan_payoff","gvw"];
-const DATE_FIELDS=["purchase_date","reg_expires"];
+const DATE_FIELDS=["purchase_date","reg_expires","sale_date"];
 
 function readForm(){
   const g=id=>{const el=$("#f_"+id); return el?el.value:undefined;};
@@ -1311,6 +1332,10 @@ function openAsset(id){
       <label class="f"><span>Purchase price</span><input type="number" step="0.01" id="f_purchase_price" value="${a.purchase_price??""}"></label>
       <label class="f"><span>Sell price</span><input type="number" step="0.01" id="f_sale_price" value="${a.sale_price??""}"></label>
     </div>
+    <div class="grid2">
+      <label class="f"><span>Sold to</span><input type="text" id="f_sold_to" value="${esc(a.sold_to||"")}"></label>
+      <label class="f"><span>Sale date</span><input type="date" id="f_sale_date" value="${a.sale_date||""}"></label>
+    </div>
     ${g!=null?`<p class="hint" style="margin-top:-2px">Sell vs. purchase: <strong class="${g>=0?"pos":"neg"}">${signed(g)}</strong> — before depreciation. Book gain/loss comes from GP.</p>`:""}
     <label class="f"><span>Purchased from</span><input type="text" id="f_vendor" value="${esc(a.vendor||"")}"></label>
   </fieldset>
@@ -1390,20 +1415,37 @@ function openAsset(id){
     $("#sheetBody").querySelectorAll("[data-ip]").forEach(el=>el.disabled=true);
   }
   const soldBtn=$("#soldA");
-  if(soldBtn) soldBtn.onclick=()=>{
-    const st=$("#f_status"), sp=$("#f_sale_price"), fs=$("#priceFs");
-    if(st.value==="Sold"){
-      st.value="Active";
-      toast("Back to Active — Save to confirm");
-    } else {
-      st.value="Sold";
-      fs.scrollIntoView({block:"center",behavior:"smooth"});
-      fs.classList.add("flash"); setTimeout(()=>fs.classList.remove("flash"),1400);
-      sp.focus();
-      toast("Enter the sell price, then Save");
-    }
+  const syncSoldBtn=()=>{
+    const st=$("#f_status");
     soldBtn.textContent = st.value==="Sold" ? "Return to active" : "Mark sold";
     soldBtn.className = "btn "+(st.value==="Sold" ? "ghost" : "warn");
+  };
+  if(soldBtn) soldBtn.onclick=()=>{
+    const st=$("#f_status");
+    if(st.value==="Sold"){
+      st.value="Active"; syncSoldBtn();
+      toast("Back to Active — Save to confirm");
+      return;
+    }
+    $("#sd_to").value=$("#f_sold_to").value||"";
+    $("#sd_price").value=$("#f_sale_price").value||"";
+    $("#sd_date").value=$("#f_sale_date").value||today();
+    $("#soldScrim").classList.add("on"); $("#soldBox").style.display="block";
+    setTimeout(()=>$("#sd_to").focus(),50);
+    const close=()=>{ $("#soldScrim").classList.remove("on"); $("#soldBox").style.display="none"; };
+    $("#sd_cancel").onclick=close;
+    $("#soldScrim").onclick=close;
+    $("#sd_ok").onclick=()=>{
+      $("#f_sold_to").value=$("#sd_to").value.trim();
+      $("#f_sale_price").value=$("#sd_price").value;
+      $("#f_sale_date").value=$("#sd_date").value;
+      $("#f_status").value="Sold"; syncSoldBtn();
+      close();
+      const fs=$("#priceFs");
+      fs.scrollIntoView({block:"center",behavior:"smooth"});
+      fs.classList.add("flash"); setTimeout(()=>fs.classList.remove("flash"),1400);
+      toast("Sale recorded on the form — Save changes to commit");
+    };
   };
   const stSel=$("#f_status");
   if(soldBtn && stSel) stSel.addEventListener("change",()=>{

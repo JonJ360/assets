@@ -74,9 +74,14 @@ main{padding:12px 16px 40px;max-width:1100px;margin:0 auto}
 .empty{padding:34px;text-align:center;color:var(--muted)}
 /* sheet */
 .scrim{position:fixed;inset:0;background:rgba(26,36,48,.42);z-index:50;display:none}.scrim.on{display:block}
-.sheet{position:fixed;top:0;right:0;bottom:0;width:min(560px,100%);background:var(--bg);z-index:51;transform:translateX(100%);
-  transition:transform .18s ease;display:flex;flex-direction:column;box-shadow:-8px 0 24px rgba(20,30,44,.18)}
-.sheet.on{transform:none}
+.sheet{position:fixed;top:50%;left:50%;width:min(640px,94vw);max-height:92vh;background:var(--bg);z-index:51;
+  border-radius:16px;overflow:hidden;transform:translate(-50%,-50%) scale(.97);opacity:0;pointer-events:none;
+  transition:opacity .16s ease,transform .16s ease;display:flex;flex-direction:column;box-shadow:0 18px 60px rgba(20,30,44,.35)}
+.sheet.on{transform:translate(-50%,-50%) scale(1);opacity:1;pointer-events:auto}
+@media(max-width:640px){
+  .sheet{top:0;left:0;width:100%;height:100%;max-height:none;border-radius:0;transform:translateY(10px)}
+  .sheet.on{transform:none}
+}
 .sheet .sh{padding:12px 16px;background:linear-gradient(180deg,#F6F8FB,#E4E9F0);border-bottom:1px solid var(--line2);display:flex;align-items:center;gap:10px}
 .sheet .sh h2{margin:0;font-size:15px;flex:1;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
 .x{background:transparent;border:0;font-size:22px;cursor:pointer;color:var(--muted);padding:0 6px;border-radius:8px}
@@ -115,7 +120,7 @@ input[type=text],input[type=number],input[type=date],textarea{width:100%;padding
 <header>
   <a class="homebtn" href="index.html" title="Asset Register">&#8962;</a>
   <span class="brand">FLEET <b>COMPLIANCE</b></span>
-  <span class="ver">IRP · IFTA · 2290 &nbsp; v1.34</span>
+  <span class="ver">IRP · IFTA · 2290 &nbsp; v1.36</span>
   <span class="spacer"></span>
   <span class="synct" id="syncT"></span>
   <button class="syncbtn" id="syncBtn" title="Sync now">&#10227;</button>
@@ -155,7 +160,7 @@ input[type=text],input[type=number],input[type=date],textarea{width:100%;padding
 <div id="toast"></div>
 
 <script>
-/* Fleet Compliance Portal (Margi) — v1.34 (auth) (version tracks the Asset Register)
+/* Fleet Compliance Portal (Margi) — v1.36 (auth) (version tracks the Asset Register)
    Same Supabase table as the Asset Register. This page PATCHes ONLY:
    plate, reg_expires, gvw, unladen, axles, on_irp, on_ifta, on_2290, compliance_notes */
 const CFG={

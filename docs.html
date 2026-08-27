@@ -32,7 +32,7 @@ ol,ul{padding-left:20px;margin:6px 0}li{margin:4px 0}
 </style>
 </head>
 <body>
-<header><span class="brand">ASSET <b>REGISTER</b> — DOCS</span><span class="ver">v1.34</span><a href="index.html">Open app →</a></header>
+<header><span class="brand">ASSET <b>REGISTER</b> — DOCS</span><span class="ver">v1.36</span><a href="index.html">Open app →</a></header>
 <main>
 
 <h2>What this is</h2>
@@ -124,6 +124,22 @@ alter table assets add column if not exists origin          text;</pre></div>
 <h2>Changed in v1.20</h2>
 <div class="card">
 Added the <strong>2027 Nordtek DO102X24-14K deck-over trailer</strong> from the Certificate of Origin: VIN 2NDKB2427VL001582, GVW 14,000 lb, purchased from James Kota Inc (Jamestown, invoice 262290), COO No. 00001950 in hand, not yet titled. Funding recorded as Trade-In; insured (matches the carrier list, whose VIN for it is a character short). Purchase price and the traded-in unit weren't on the scanned bill of sale — price blank, trade-in disposition pending. 86 vehicles total.
+</div>
+
+<h2>Changed in v1.36</h2>
+<div class="card">
+<p style="margin-top:0"><strong>Sale details captured at Mark sold.</strong> The button now opens a small dialog — Sold to, Sale price, Sale date (defaults to today) — fills the form, and nothing commits until Save changes.</p>
+<ul>
+<li>Two new fields on the asset: <code>sold_to</code> and <code>sale_date</code>, editable in the Price section, included in export/import, tracked in History like everything else.</li>
+<li>Cards on sold vehicles show a "Sold: buyer · date · price" line.</li>
+<li><strong>Schema first:</strong> <code>alter table assets add column if not exists sold_to text; alter table assets add column if not exists sale_date date;</code> must run before this version is pushed.</li>
+<li>Return to active leaves the sale details in place (history is history); clear them manually if a sale falls through.</li>
+</ul>
+</div>
+
+<h2>Changed in v1.35</h2>
+<div class="card">
+The asset detail panel (and the portal's vehicle panel) now opens as a <strong>centered modal</strong> on desktop — rounded, shadowed, max 92% viewport height — instead of sliding in from the right. On phones it stays full-screen. All behavior unchanged: same fields, buttons, record navigation, unsaved-changes guard.
 </div>
 
 <h2>Changed in v1.34</h2>
@@ -471,6 +487,8 @@ Depreciation · file attachments (link out via <code>doc_url</code>) · maintena
 <table>
 <thead><tr><th>Ver</th><th>Changes</th></tr></thead>
 <tbody>
+<tr><td>1.36</td><td>Mark sold opens a sale-details dialog (buyer, price, date); sold_to and sale_date columns added, on cards, in export/import, and in the audit history. Schema change required first.</td></tr>
+<tr><td>1.35</td><td>Detail panels open centered on desktop (modal style); full-screen on mobile unchanged. Both pages.</td></tr>
 <tr><td>1.34</td><td>Frosted-blur backdrop on the sign-in screen, both pages.</td></tr>
 <tr><td>1.33</td><td>Sign-in required (Supabase Auth, shared user pool with AR CRM). Editor allow-list (jonj, margi) enforced in RLS; all other accounts view-only. assets_rls.sql removes anon access entirely. Portal v1.33 in lockstep.</td></tr>
 <tr><td>1.32</td><td>Sort dropdown + direction toggle in the filter bar so mobile card view can sort (Year included). Shares state with the table headers.</td></tr>
