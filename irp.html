@@ -120,7 +120,7 @@ input[type=text],input[type=number],input[type=date],textarea{width:100%;padding
 <header>
   <a class="homebtn" href="index.html" title="Asset Register">&#8962;</a>
   <span class="brand">FLEET <b>COMPLIANCE</b></span>
-  <span class="ver">IRP · IFTA · 2290 &nbsp; v1.36</span>
+  <span class="ver">IRP · IFTA · 2290 &nbsp; v1.37</span>
   <span class="spacer"></span>
   <span class="synct" id="syncT"></span>
   <button class="syncbtn" id="syncBtn" title="Sync now">&#10227;</button>
@@ -160,7 +160,7 @@ input[type=text],input[type=number],input[type=date],textarea{width:100%;padding
 <div id="toast"></div>
 
 <script>
-/* Fleet Compliance Portal (Margi) — v1.36 (auth) (version tracks the Asset Register)
+/* Fleet Compliance Portal (Margi) — v1.37 (auth) (version tracks the Asset Register)
    Same Supabase table as the Asset Register. This page PATCHes ONLY:
    plate, reg_expires, gvw, unladen, axles, on_irp, on_ifta, on_2290, compliance_notes */
 const CFG={
@@ -207,8 +207,9 @@ let ROWS=[], FILT="programs", Q="", SEL=null, LASTSYNC=null, SYNCING=false, SYNC
 
 async function sb(path,opt={}){
   const tok=await AUTH.token();
+  if(!tok){ showLogin(); throw new Error("Session expired — sign in again"); }
   const r=await fetch(CFG.URL+"/rest/v1/"+path,{method:opt.method||"GET",
-    headers:{apikey:CFG.KEY,Authorization:"Bearer "+(tok||CFG.KEY),"Content-Type":"application/json",Prefer:opt.prefer||"return=representation"},
+    headers:{apikey:CFG.KEY,Authorization:"Bearer "+tok,"Content-Type":"application/json",Prefer:opt.prefer||"return=representation"},
     body:opt.body?JSON.stringify(opt.body):undefined});
   if(r.status===401&&AUTH.s){ const ok=await AUTH.refresh(); if(ok) return sb(path,opt); showLogin(); throw new Error("Session expired"); }
   if(!r.ok) throw new Error((await r.text()).slice(0,200));

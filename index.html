@@ -346,7 +346,7 @@ table.apx td.sm{font-size:11px;color:#55606C}
 const BAKED_CONFIG = {
   SUPABASE_URL: "https://inhwadbibwkakacdvoxu.supabase.co",   // AR Collections project
   SUPABASE_ANON_KEY: "sb_publishable_mvtNl3RxZB_V8xSserWVZA_8givexBq",
-  APP_VERSION: "1.36",
+  APP_VERSION: "1.37",
   // Unit # convention. Prefix per branch, separator, zero-padding width.
   // Fargo 107 -> "F-107". Set UNIT_PAD to 3 for "F-107", 0 for no padding.
   UNIT_PREFIX: { "Fargo":"F", "Bismarck":"B", "Grand Forks":"GF" },
@@ -487,11 +487,12 @@ const AUTH = {
 /* ---------- data layer ---------- */
 async function sb(path, opt={}){
   const tok = await AUTH.token();
+  if(!tok){ showLogin(); throw new Error("Session expired — sign in again"); }
   const r = await fetch(BAKED_CONFIG.SUPABASE_URL+"/rest/v1/"+path, {
     method: opt.method||"GET",
     headers:{
       apikey: BAKED_CONFIG.SUPABASE_ANON_KEY,
-      Authorization:"Bearer "+(tok||BAKED_CONFIG.SUPABASE_ANON_KEY),
+      Authorization:"Bearer "+tok,
       "Content-Type":"application/json",
       Prefer: opt.prefer||"return=representation"
     },
@@ -1546,7 +1547,10 @@ $("#whoami").addEventListener("click",()=>{ if(confirm("Sign out?")){ AUTH.signO
   AUTH.load();
   if(LIVE && !AUTH.s){ render(); showLogin(); return; }
   try{ await DB.load(); if(LIVE) state.lastSync=new Date(); }
-  catch(e){ state.syncError=true; toast("Load failed: "+e.message,1); }
+  catch(e){
+    if(!AUTH.s){ state.syncError=false; render(); return; }
+    state.syncError=true; toast("Load failed: "+e.message,1);
+  }
   render();
 })();
 </script>

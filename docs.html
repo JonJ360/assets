@@ -32,7 +32,7 @@ ol,ul{padding-left:20px;margin:6px 0}li{margin:4px 0}
 </style>
 </head>
 <body>
-<header><span class="brand">ASSET <b>REGISTER</b> — DOCS</span><span class="ver">v1.36</span><a href="index.html">Open app →</a></header>
+<header><span class="brand">ASSET <b>REGISTER</b> — DOCS</span><span class="ver">v1.37</span><a href="index.html">Open app →</a></header>
 <main>
 
 <h2>What this is</h2>
@@ -124,6 +124,16 @@ alter table assets add column if not exists origin          text;</pre></div>
 <h2>Changed in v1.20</h2>
 <div class="card">
 Added the <strong>2027 Nordtek DO102X24-14K deck-over trailer</strong> from the Certificate of Origin: VIN 2NDKB2427VL001582, GVW 14,000 lb, purchased from James Kota Inc (Jamestown, invoice 262290), COO No. 00001950 in hand, not yet titled. Funding recorded as Trade-In; insured (matches the carrier list, whose VIN for it is a character short). Purchase price and the traded-in unit weren't on the scanned bill of sale — price blank, trade-in disposition pending. 86 vehicles total.
+</div>
+
+<h2>Changed in v1.37</h2>
+<div class="card">
+<p style="margin-top:0"><strong>Expired-session startup fixed.</strong> If token refresh fails, both the Asset Register and Fleet Compliance Portal now return to sign-in before requesting protected asset data.</p>
+<ul>
+<li>The apps no longer fall back to the anonymous publishable key after an expired session.</li>
+<li>Supabase RLS remains locked down; anonymous access to <code>assets</code> is not restored.</li>
+<li>A regression test covers both pages.</li>
+</ul>
 </div>
 
 <h2>Changed in v1.36</h2>
@@ -472,7 +482,7 @@ UNIT_PAD: 0        // 0 -> "F-107". 3 -> "F-107" stays, "F-7" becomes "F-007".</
 <div class="card">
 <ul>
 <li>Single file, no build step, no CDN dependencies. Supabase via the PostgREST endpoint with <code>fetch</code> — no SDK.</li>
-<li>No <code>localStorage</code>. Live mode reads and writes Supabase on every action; local mode is memory only.</li>
+<li>Only the Supabase authentication session is cached in <code>localStorage</code>; asset data is not. Live mode reads and writes Supabase on every action; local mode is memory only.</li>
 <li>Every save re-reads the table in live mode, so concurrent users converge on refresh. Last write wins.</li>
 <li>Responsive to phone width — tables collapse to labeled stacks. Visible keyboard focus, <code>Esc</code> closes the panel, reduced-motion respected.</li>
 </ul>
@@ -487,6 +497,7 @@ Depreciation · file attachments (link out via <code>doc_url</code>) · maintena
 <table>
 <thead><tr><th>Ver</th><th>Changes</th></tr></thead>
 <tbody>
+<tr><td>1.37</td><td>Fixed expired-session startup on both pages: failed token refresh returns to sign-in before any protected REST request instead of falling back to the anonymous role. RLS remains locked down.</td></tr>
 <tr><td>1.36</td><td>Mark sold opens a sale-details dialog (buyer, price, date); sold_to and sale_date columns added, on cards, in export/import, and in the audit history. Schema change required first.</td></tr>
 <tr><td>1.35</td><td>Detail panels open centered on desktop (modal style); full-screen on mobile unchanged. Both pages.</td></tr>
 <tr><td>1.34</td><td>Frosted-blur backdrop on the sign-in screen, both pages.</td></tr>
