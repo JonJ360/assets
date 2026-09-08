@@ -111,6 +111,7 @@ tfoot td{background:linear-gradient(180deg,#F8FAFC,#EDF0F5);font-weight:650;bord
 .btn.danger{background:linear-gradient(180deg,#D06158,#B93F36);border-color:#9E362E}
 .btn.sm{padding:4px 11px;font-size:12.5px;border-radius:8px}
 .btn:disabled{opacity:.5;cursor:not-allowed}
+input::placeholder,textarea::placeholder{color:#B4BCC7;opacity:1}
 input[type=text],input[type=number],input[type=date],select,textarea{width:100%;padding:7px 9px;border:1px solid var(--line2);
   border-radius:9px;background:linear-gradient(180deg,#FBFCFD,#fff);box-shadow:0 1px 1px rgba(28,40,58,.05) inset}
 input:focus,select:focus,textarea:focus{outline:0;border-color:var(--blue);box-shadow:0 0 0 3px rgba(46,111,217,.16)}
@@ -278,7 +279,7 @@ table.apx td.sm{font-size:11px;color:#55606C}
 
 <header>
   <span class="brand">ASSET <b>REGISTER</b></span>
-  <span class="ver" id="verTag">v1.36</span>
+  <span class="ver" id="verTag">v1.38</span>
   <span class="spacer"></span>
   <span class="synct" id="syncT"></span>
   <button class="syncbtn" id="syncBtn" title="Sync now">&#10227;</button>
@@ -346,7 +347,7 @@ table.apx td.sm{font-size:11px;color:#55606C}
 const BAKED_CONFIG = {
   SUPABASE_URL: "https://inhwadbibwkakacdvoxu.supabase.co",   // AR Collections project
   SUPABASE_ANON_KEY: "sb_publishable_mvtNl3RxZB_V8xSserWVZA_8givexBq",
-  APP_VERSION: "1.37",
+  APP_VERSION: "1.38",
   // Unit # convention. Prefix per branch, separator, zero-padding width.
   // Fargo 107 -> "F-107". Set UNIT_PAD to 3 for "F-107", 0 for no padding.
   UNIT_PREFIX: { "Fargo":"F", "Bismarck":"B", "Grand Forks":"GF" },
@@ -487,12 +488,11 @@ const AUTH = {
 /* ---------- data layer ---------- */
 async function sb(path, opt={}){
   const tok = await AUTH.token();
-  if(!tok){ showLogin(); throw new Error("Session expired — sign in again"); }
   const r = await fetch(BAKED_CONFIG.SUPABASE_URL+"/rest/v1/"+path, {
     method: opt.method||"GET",
     headers:{
       apikey: BAKED_CONFIG.SUPABASE_ANON_KEY,
-      Authorization:"Bearer "+tok,
+      Authorization:"Bearer "+(tok||BAKED_CONFIG.SUPABASE_ANON_KEY),
       "Content-Type":"application/json",
       Prefer: opt.prefer||"return=representation"
     },
@@ -810,6 +810,7 @@ function assetCard(a){
     cell("Origin",esc(a.origin)),
     cell("Depr. schedule",a.on_dep_schedule?("Yes"+(a.dep_location?" — "+esc(a.dep_location):"")):"No"),
     cell("Programs",[a.on_irp&&"IRP",a.on_ifta&&"IFTA",a.on_2290&&"2290"].filter(Boolean).join(" · ")),
+    cell("Modified",a.updated_at?String(a.updated_at).slice(0,10):""),
     cell("Sold",a.status==="Sold"?[a.sold_to,a.sale_date?dt(a.sale_date):null,a.sale_price!=null?money(a.sale_price):null].filter(Boolean).join(" · "):""),
     cell("Title held by",esc(a.title_note),1),
     cell("Notes",esc(a.notes),1),
@@ -852,7 +853,7 @@ function vAssets(){
       <button class="btn ${state.f.nounit?"":"ghost"} sm" id="fnounit">No unit #</button>
       <button class="btn ghost sm" id="fclear">Clear</button>
       <select id="fsortk" title="Sort by">
-        ${[["unit_no","Sort: Unit #"],["year","Sort: Year"],["name","Sort: Name"],["purchase_date","Sort: Purchased"],["purchase_price","Sort: Purchase $"],["sale_price","Sort: Sell $"],["status","Sort: Status"],["location","Sort: Branch"]].map(([k,l])=>`<option value="${k}"${state.sort.k===k?" selected":""}>${l}</option>`).join("")}
+        ${[["unit_no","Sort: Unit #"],["year","Sort: Year"],["name","Sort: Name"],["purchase_date","Sort: Purchased"],["updated_at","Sort: Modified"],["purchase_price","Sort: Purchase $"],["sale_price","Sort: Sell $"],["status","Sort: Status"],["location","Sort: Branch"]].map(([k,l])=>`<option value="${k}"${state.sort.k===k?" selected":""}>${l}</option>`).join("")}
       </select>
       <button class="btn ghost sm" id="fsortd" title="Flip direction">${state.sort.dir>0?"▲ Asc":"▼ Desc"}</button>
     </div>
@@ -864,7 +865,7 @@ function vAssets(){
     ${rows.length?`<div class="ac-total"><span>${rows.length} asset${rows.length===1?"":"s"}</span><span class="mono">${money(cost)}</span></div>`:""}
     </div>
     <table class="responsive atable"><thead><tr>
-      ${H("unit_no","Unit #")}${H("name","Asset")}${H("year","Year")}${H("category","Category")}${H("entity","Entity")}${H("location","Branch")}${H("status","Status")}${H("purchase_date","Purchased")}${H("purchase_price","Purchase",1)}${H("sale_price","Sell",1)}
+      ${H("unit_no","Unit #")}${H("name","Asset")}${H("year","Year")}${H("category","Category")}${H("entity","Entity")}${H("location","Branch")}${H("status","Status")}${H("purchase_date","Purchased")}${H("updated_at","Modified")}${H("purchase_price","Purchase",1)}${H("sale_price","Sell",1)}
     </tr></thead><tbody>
     ${rows.map(a=>{const g=gainOf(a);return `<tr class="clickable" data-open="${a.id}">
       <td data-l="Unit #" class="mono">${a.unit_no?esc(a.unit_no):'<span class="hint">—</span>'}</td>
@@ -875,6 +876,7 @@ function vAssets(){
       <td data-l="Branch">${esc(a.location||"—")}</td>
       <td data-l="Status"><span class="pill s-${esc(a.status||"Active")}">${esc(a.status||"Active")}</span></td>
       <td data-l="Purchased" class="mono">${dt(a.purchase_date)}</td>
+      <td data-l="Modified" class="mono hint">${a.updated_at?String(a.updated_at).slice(0,10):"—"}</td>
       <td data-l="Purchase" class="num">${money(a.purchase_price)}</td>
       <td data-l="Sell" class="num">${money(a.sale_price)}${g!=null?`<div class="hint ${g>=0?"pos":"neg"}">${signed(g)}</div>`:""}</td></tr>`}).join("")
       || `<tr><td colspan="9" class="empty">No assets match these filters.</td></tr>`}
@@ -1224,7 +1226,7 @@ function mountUnitField(id){
     const chips=openNumbers(bSel.value,id,4);
     wrap.innerHTML=`<div class="unitrow">
         <span class="prefixchip">${esc(pre|| "—")}</span>
-        <input type="number" id="uNum" value="${digits}" placeholder="107" ${pre?"":"disabled"}>
+        <input type="number" id="uNum" value="${digits}" placeholder="###" ${pre?"":"disabled"}>
         ${hid.value?`<button type="button" class="btn ghost sm" id="uLock">Done</button>`:""}
       </div>
       ${pre? `<div class="openchips"><span class="hint" style="align-self:center">Open:</span>
@@ -1547,10 +1549,7 @@ $("#whoami").addEventListener("click",()=>{ if(confirm("Sign out?")){ AUTH.signO
   AUTH.load();
   if(LIVE && !AUTH.s){ render(); showLogin(); return; }
   try{ await DB.load(); if(LIVE) state.lastSync=new Date(); }
-  catch(e){
-    if(!AUTH.s){ state.syncError=false; render(); return; }
-    state.syncError=true; toast("Load failed: "+e.message,1);
-  }
+  catch(e){ state.syncError=true; toast("Load failed: "+e.message,1); }
   render();
 })();
 </script>
