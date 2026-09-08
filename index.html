@@ -279,7 +279,7 @@ table.apx td.sm{font-size:11px;color:#55606C}
 
 <header>
   <span class="brand">ASSET <b>REGISTER</b></span>
-  <span class="ver" id="verTag">v1.38</span>
+  <span class="ver" id="verTag">v1.39</span>
   <span class="spacer"></span>
   <span class="synct" id="syncT"></span>
   <button class="syncbtn" id="syncBtn" title="Sync now">&#10227;</button>
@@ -347,7 +347,7 @@ table.apx td.sm{font-size:11px;color:#55606C}
 const BAKED_CONFIG = {
   SUPABASE_URL: "https://inhwadbibwkakacdvoxu.supabase.co",   // AR Collections project
   SUPABASE_ANON_KEY: "sb_publishable_mvtNl3RxZB_V8xSserWVZA_8givexBq",
-  APP_VERSION: "1.38",
+  APP_VERSION: "1.39",
   // Unit # convention. Prefix per branch, separator, zero-padding width.
   // Fargo 107 -> "F-107". Set UNIT_PAD to 3 for "F-107", 0 for no padding.
   UNIT_PREFIX: { "Fargo":"F", "Bismarck":"B", "Grand Forks":"GF" },
@@ -488,11 +488,12 @@ const AUTH = {
 /* ---------- data layer ---------- */
 async function sb(path, opt={}){
   const tok = await AUTH.token();
+  if(!tok){ showLogin(); throw new Error("Session expired — sign in again"); }
   const r = await fetch(BAKED_CONFIG.SUPABASE_URL+"/rest/v1/"+path, {
     method: opt.method||"GET",
     headers:{
       apikey: BAKED_CONFIG.SUPABASE_ANON_KEY,
-      Authorization:"Bearer "+(tok||BAKED_CONFIG.SUPABASE_ANON_KEY),
+      Authorization:"Bearer "+tok,
       "Content-Type":"application/json",
       Prefer: opt.prefer||"return=representation"
     },
@@ -879,9 +880,9 @@ function vAssets(){
       <td data-l="Modified" class="mono hint">${a.updated_at?String(a.updated_at).slice(0,10):"—"}</td>
       <td data-l="Purchase" class="num">${money(a.purchase_price)}</td>
       <td data-l="Sell" class="num">${money(a.sale_price)}${g!=null?`<div class="hint ${g>=0?"pos":"neg"}">${signed(g)}</div>`:""}</td></tr>`}).join("")
-      || `<tr><td colspan="9" class="empty">No assets match these filters.</td></tr>`}
+      || `<tr><td colspan="11" class="empty">No assets match these filters.</td></tr>`}
     </tbody>
-    ${rows.length?`<tfoot><tr><td colspan="7">${rows.length} asset${rows.length===1?"":"s"}</td><td class="num">${money(cost)}</td><td class="num">${sale?money(sale):"—"}</td></tr></tfoot>`:""}
+    ${rows.length?`<tfoot><tr><td colspan="9">${rows.length} asset${rows.length===1?"":"s"}</td><td class="num">${money(cost)}</td><td class="num">${sale?money(sale):"—"}</td></tr></tfoot>`:""}
     </table></div></div>`;
 
   const on=(id,ev,fn)=>{const el=$("#"+id); if(el) el.addEventListener(ev,fn);};
@@ -1005,7 +1006,7 @@ const IMPORT_FIELDS=[
   ["vendor","Purchased from"],["funding","Funding"],["lender","Lender"],["loan_payoff","Loan payoff"],
   ["reg_expires","Registration expires"],["title_status","Title status"],["title_note","Title held by / note"],["state","Title state"],["title_number","Title number"],["gvw","GVW"],["on_dep_schedule","On depr. schedule"],["dep_location","Depr. schedule line"],["origin","Origin"],["in_progress","In progress"],["on_irp","On IRP"],["on_ifta","On IFTA"],["on_2290","On 2290"],["notes","Notes"],["doc_url","Document link"]
 ];
-const EXPORT_COLS=["unit_no","name","category","make","model","year","vin","serial","plate","entity","location","status","assigned_to","purchase_date","purchase_price","sale_price","vendor","funding","lender","sold_to","loan_payoff","reg_expires","insured","title_status","title_note","state","title_number","gvw","on_dep_schedule","dep_location","origin","in_progress","on_irp","on_ifta","on_2290","sold_to","sale_date","notes","doc_url"];
+const EXPORT_COLS=["unit_no","name","category","make","model","year","vin","serial","plate","entity","location","status","assigned_to","purchase_date","purchase_price","sale_price","vendor","funding","lender","loan_payoff","reg_expires","insured","title_status","title_note","state","title_number","gvw","on_dep_schedule","dep_location","origin","in_progress","on_irp","on_ifta","on_2290","sold_to","sale_date","notes","doc_url"];
 
 function vData(){
   $("#view").innerHTML = banner()+`
