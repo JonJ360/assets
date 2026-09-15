@@ -10,10 +10,18 @@ def text(name):
 
 
 class ReleaseConsistencyTests(unittest.TestCase):
-    def test_visible_release_is_v140_on_all_pages(self):
-        self.assertIn('id="verTag">v1.40', text("index.html"))
-        self.assertIn('IRP · IFTA · 2290 &nbsp; v1.40', text("irp.html"))
-        self.assertIn('<span class="ver">v1.40</span>', text("docs.html"))
+    def test_visible_release_is_v141_on_all_pages(self):
+        self.assertIn('id="verTag">v1.41', text("index.html"))
+        self.assertIn('IRP · IFTA · 2290 &nbsp; v1.41', text("irp.html"))
+        self.assertIn('<span class="ver">v1.41</span>', text("docs.html"))
+
+    def test_live_pages_refresh_every_five_minutes_without_stomping_edits(self):
+        register = text("index.html")
+        portal = text("irp.html")
+        self.assertRegex(register, r"setInterval\([^;]*syncNow\(true\)[^;]*300000\)")
+        self.assertRegex(portal, r"setInterval\([^;]*load\(true\)[^;]*300000\)")
+        self.assertIn('!$("#sheet").classList.contains("on")', register)
+        self.assertIn('!$("#sheet").classList.contains("on")', portal)
 
     def test_shayne_is_an_editor_on_both_apps_and_in_recovery_sql(self):
         editor = "shaynew@smionline.com"

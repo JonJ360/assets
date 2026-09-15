@@ -279,7 +279,7 @@ table.apx td.sm{font-size:11px;color:#55606C}
 
 <header>
   <span class="brand">ASSET <b>REGISTER</b></span>
-  <span class="ver" id="verTag">v1.40</span>
+  <span class="ver" id="verTag">v1.41</span>
   <span class="spacer"></span>
   <span class="synct" id="syncT"></span>
   <button class="syncbtn" id="syncBtn" title="Sync now">&#10227;</button>
@@ -347,7 +347,7 @@ table.apx td.sm{font-size:11px;color:#55606C}
 const BAKED_CONFIG = {
   SUPABASE_URL: "https://inhwadbibwkakacdvoxu.supabase.co",   // AR Collections project
   SUPABASE_ANON_KEY: "sb_publishable_mvtNl3RxZB_V8xSserWVZA_8givexBq",
-  APP_VERSION: "1.40",
+  APP_VERSION: "1.41",
   // Unit # convention. Prefix per branch, separator, zero-padding width.
   // Fargo 107 -> "F-107". Set UNIT_PAD to 3 for "F-107", 0 for no padding.
   UNIT_PREFIX: { "Fargo":"F", "Bismarck":"B", "Grand Forks":"GF" },
@@ -1520,13 +1520,13 @@ async function doLogin(){
 document.addEventListener("DOMContentLoaded",()=>{});
  
 /* ---------- sync ---------- */
-async function syncNow(){
+async function syncNow(quiet=false){
   if(!LIVE || state.syncing) return;
   state.syncing=true; $("#syncBtn").classList.add("spin");
   try{
     await DB.load();
     state.lastSync=new Date(); state.syncError=false;
-    render(); toast("Synced");
+    render(); if(!quiet) toast("Synced");
   }catch(e){
     state.syncError=true; render(); toast("Sync failed: "+e.message,1);
   }finally{
@@ -1541,6 +1541,8 @@ document.addEventListener("visibilitychange",()=>{
 });
 // Back/forward navigation restores a frozen page from the browser cache — always re-sync then.
 window.addEventListener("pageshow",e=>{ if(e.persisted && LIVE) syncNow(); });
+// Keep an open, idle register current without interrupting an active edit.
+setInterval(()=>{ if(document.visibilityState==="visible" && LIVE && AUTH.s && !$("#sheet").classList.contains("on")) syncNow(true) },300000);
 
 /* ---------- boot ---------- */
 $("#li_go").addEventListener("click",doLogin);

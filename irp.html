@@ -120,7 +120,7 @@ input[type=text],input[type=number],input[type=date],textarea{width:100%;padding
 <header>
   <a class="homebtn" href="index.html" title="Asset Register">&#8962;</a>
   <span class="brand">FLEET <b>COMPLIANCE</b></span>
-  <span class="ver">IRP · IFTA · 2290 &nbsp; v1.40</span>
+  <span class="ver">IRP · IFTA · 2290 &nbsp; v1.41</span>
   <span class="spacer"></span>
   <span class="synct" id="syncT"></span>
   <button class="syncbtn" id="syncBtn" title="Sync now">&#10227;</button>
@@ -160,7 +160,7 @@ input[type=text],input[type=number],input[type=date],textarea{width:100%;padding
 <div id="toast"></div>
 
 <script>
-/* Fleet Compliance Portal (Margi) — v1.40 (auth) (version tracks the Asset Register)
+/* Fleet Compliance Portal (Margi) — v1.41 (auth) (version tracks the Asset Register)
    Same Supabase table as the Asset Register. This page PATCHes ONLY:
    plate, reg_expires, gvw, unladen, axles, on_irp, on_ifta, on_2290, compliance_notes */
 const CFG={
@@ -259,6 +259,8 @@ document.addEventListener("visibilitychange",()=>{
      && !$("#sheet").classList.contains("on")) load(true);
 });
 window.addEventListener("pageshow",e=>{ if(e.persisted) load(true); });
+// Keep an open, idle portal current without interrupting an active edit.
+setInterval(()=>{ if(document.visibilityState==="visible" && AUTH.s && !$("#sheet").classList.contains("on")) load(true) },300000);
 const held=a=>!["Sold","Disposed"].includes(a.status);
 const anyProg=a=>a.on_irp||a.on_ifta||a.on_2290;
 
