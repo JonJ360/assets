@@ -116,18 +116,18 @@ create policy "auth read assets" on public.assets
 drop policy if exists "editors insert" on public.assets;
 create policy "editors insert" on public.assets
   for insert to authenticated
-  with check (lower(auth.jwt() ->> 'email') = any (array['jonj@360-llc.com', 'margi@360-llc.com']));
+  with check (lower(auth.jwt() ->> 'email') = any (array['jonj@360-llc.com', 'margi@360-llc.com', 'shaynew@smionline.com']));
 
 drop policy if exists "editors update" on public.assets;
 create policy "editors update" on public.assets
   for update to authenticated
-  using (lower(auth.jwt() ->> 'email') = any (array['jonj@360-llc.com', 'margi@360-llc.com']))
-  with check (lower(auth.jwt() ->> 'email') = any (array['jonj@360-llc.com', 'margi@360-llc.com']));
+  using (lower(auth.jwt() ->> 'email') = any (array['jonj@360-llc.com', 'margi@360-llc.com', 'shaynew@smionline.com']))
+  with check (lower(auth.jwt() ->> 'email') = any (array['jonj@360-llc.com', 'margi@360-llc.com', 'shaynew@smionline.com']));
 
 drop policy if exists "editors delete" on public.assets;
 create policy "editors delete" on public.assets
   for delete to authenticated
-  using (lower(auth.jwt() ->> 'email') = any (array['jonj@360-llc.com', 'margi@360-llc.com']));
+  using (lower(auth.jwt() ->> 'email') = any (array['jonj@360-llc.com', 'margi@360-llc.com', 'shaynew@smionline.com']));
 
 drop policy if exists "auth read history" on public.asset_history;
 create policy "auth read history" on public.asset_history

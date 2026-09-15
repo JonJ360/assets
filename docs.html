@@ -32,7 +32,7 @@ ol,ul{padding-left:20px;margin:6px 0}li{margin:4px 0}
 </style>
 </head>
 <body>
-<header><span class="brand">ASSET <b>REGISTER</b> — DOCS</span><span class="ver">v1.39</span><a href="index.html">Open app →</a></header>
+<header><span class="brand">ASSET <b>REGISTER</b> — DOCS</span><span class="ver">v1.40</span><a href="index.html">Open app →</a></header>
 <main>
 
 <h2>What this is</h2>
@@ -105,17 +105,17 @@ create policy "auth read assets" on assets
 create policy "editors insert" on assets
   for insert to authenticated
   with check (lower(auth.jwt() ->> 'email') = any
-    (array['jonj@360-llc.com','margi@360-llc.com']));
+    (array['jonj@360-llc.com','margi@360-llc.com','shaynew@smionline.com']));
 create policy "editors update" on assets
   for update to authenticated
   using (lower(auth.jwt() ->> 'email') = any
-    (array['jonj@360-llc.com','margi@360-llc.com']))
+    (array['jonj@360-llc.com','margi@360-llc.com','shaynew@smionline.com']))
   with check (lower(auth.jwt() ->> 'email') = any
-    (array['jonj@360-llc.com','margi@360-llc.com']));
+    (array['jonj@360-llc.com','margi@360-llc.com','shaynew@smionline.com']));
 create policy "editors delete" on assets
   for delete to authenticated
   using (lower(auth.jwt() ->> 'email') = any
-    (array['jonj@360-llc.com','margi@360-llc.com']));</pre>
+    (array['jonj@360-llc.com','margi@360-llc.com','shaynew@smionline.com']));</pre>
 
 <div class="card warn"><strong>Security.</strong> The publishable key identifies the Supabase project but is not authorization. Keep RLS enabled, require authenticated reads, and restrict writes to approved editor identities. The production policy snapshot is in <code>supabase/live_schema_snapshot.sql</code>.</div>
 
@@ -180,7 +180,7 @@ Sign-in screen now heavily blurs and frosts the page behind it on both the regis
 <div class="card">
 <p style="margin-top:0"><strong>Authentication + lockdown.</strong> Both the register and the portal now require sign-in (email + PIN, same accounts as the AR CRM — one user pool per Supabase project).</p>
 <ul>
-<li><strong>Editors:</strong> jonj@360-llc.com, margi@360-llc.com — full edit everywhere. Everyone else signed in is <strong>view-only</strong>: forms disabled, no save/delete/import, no program toggles, no in-progress checkboxes. A viewer account can be added in Supabase Auth anytime with no code change.</li>
+<li><strong>Editors:</strong> jonj@360-llc.com, margi@360-llc.com, shaynew@smionline.com — full edit everywhere. Everyone else signed in is <strong>view-only</strong>: forms disabled, no save/delete/import, no program toggles, no in-progress checkboxes. A viewer account can be added in Supabase Auth anytime with no code change.</li>
 <li>Header shows the signed-in account (&#128065; prefix = view-only); tap it to sign out. Sessions persist and refresh automatically.</li>
 <li><strong>assets_rls.sql</strong> (run AFTER deploying both pages): anon loses all access to assets and history — the key in the public page source opens nothing; signed-in users read; only the editor emails write; history remains trigger-write-only.</li>
 <li>Deploy order matters: pages first, SQL second. Running the SQL first locks out the live v1.32 pages for everyone.</li>
@@ -516,6 +516,7 @@ Depreciation · file attachments (link out via <code>doc_url</code>) · maintena
 <table>
 <thead><tr><th>Ver</th><th>Changes</th></tr></thead>
 <tbody>
+<tr><td>1.40</td><td>Granted Shayne W. full editor access in the Asset Register and Fleet Compliance portal.</td></tr>
 <tr><td>1.39</td><td>Restored the expired-session auth guard on both pages; replaced the unsafe anonymous-policy setup example; corrected session-storage and modified-date documentation; portal edits stamp updated_at; Modified table footer alignment fixed.</td></tr>
 <tr><td>1.38</td><td>Sortable Modified column, Sort: Modified dropdown option, Modified line on cards, neutral ### unit-number placeholder, and faint placeholder styling.</td></tr>
 <tr><td>1.37</td><td>Expired-session startup fixed on both pages: failed refresh returns to sign-in before protected REST requests instead of falling back to the anonymous role.</td></tr>
