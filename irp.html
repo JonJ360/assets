@@ -120,7 +120,7 @@ input[type=text],input[type=number],input[type=date],textarea{width:100%;padding
 <header>
   <a class="homebtn" href="index.html" title="Asset Register">&#8962;</a>
   <span class="brand">FLEET <b>COMPLIANCE</b></span>
-  <span class="ver">IRP · IFTA · 2290 &nbsp; v1.41</span>
+  <span class="ver">IRP · IFTA · 2290 &nbsp; v1.42</span>
   <span class="spacer"></span>
   <span class="synct" id="syncT"></span>
   <button class="syncbtn" id="syncBtn" title="Sync now">&#10227;</button>
@@ -160,9 +160,10 @@ input[type=text],input[type=number],input[type=date],textarea{width:100%;padding
 <div id="toast"></div>
 
 <script>
-/* Fleet Compliance Portal (Margi) — v1.41 (auth) (version tracks the Asset Register)
+/* Fleet Compliance Portal (Margi) — v1.42 (auth) (version tracks the Asset Register)
    Same Supabase table as the Asset Register. This page PATCHes ONLY:
-   plate, reg_expires, gvw, unladen, axles, on_irp, on_ifta, on_2290, compliance_notes */
+   state, title_number, plate, reg_expires, gvw, unladen, axles,
+   on_irp, on_ifta, on_2290, compliance_notes, updated_at */
 const CFG={
   URL:"https://inhwadbibwkakacdvoxu.supabase.co",
   KEY:"sb_publishable_mvtNl3RxZB_V8xSserWVZA_8givexBq"
@@ -318,7 +319,6 @@ function open(id){
       <div class="sp"><span class="spl">Year / Make / Model</span><span class="spv">${esc([a.year,a.make,a.model].filter(Boolean).join(" "))||"—"}</span></div>
       <div class="sp"><span class="spl">Branch</span><span class="spv">${esc(a.location||"—")}${a.entity==="SFAB"?" (SFAB)":""}</span></div>
       <div class="sp" style="grid-column:1/-1"><span class="spl">VIN</span><span class="spv" style="font-family:var(--mono)">${esc(a.vin||"—")}</span></div>
-      <div class="sp"><span class="spl">Title #</span><span class="spv" style="font-family:var(--mono)">${esc((a.state?a.state+" ":"")+(a.title_number||"—"))}</span></div>
       <div class="sp"><span class="spl">Status</span><span class="spv">${esc(a.status||"")}</span></div>
     </div>
   </fieldset>
@@ -329,6 +329,12 @@ function open(id){
       <div class="tg${a.on_2290?" on":""}" data-t="on_2290"><div class="tn">2290</div><div class="ts">${a.on_2290?"Filed / req'd":"Off"}</div></div>
     </div>
     ${a.gvw&&a.gvw>=55000&&!a.on_2290?`<p class="hint" style="margin-bottom:4px">GVW ${Number(a.gvw).toLocaleString()} lb — 2290 normally applies at 55,000+.</p>`:""}
+  </fieldset>
+  <fieldset class="fs"><legend>Title</legend>
+    <div class="grid2">
+      <label class="f"><span>Title state</span><input type="text" id="p_state" value="${esc(a.state||"")}"></label>
+      <label class="f"><span>Title number</span><input type="text" id="p_title_number" value="${esc(a.title_number||"")}"></label>
+    </div>
   </fieldset>
   <fieldset class="fs"><legend>Registration & weights</legend>
     <div class="grid2">
@@ -366,7 +372,10 @@ $("#shX").onclick=close; $("#shClose").onclick=close; $("#scrim").onclick=close;
 document.addEventListener("keydown",e=>{if(e.key==="Escape")close();});
 $("#shSave").onclick=async()=>{
   if(!SEL) return;
+  if(!canEdit()){ toast("View-only account",1); return; }
   const patch={
+    state:$("#p_state").value.trim(),
+    title_number:$("#p_title_number").value.trim(),
     plate:$("#p_plate").value.trim(),
     reg_expires:$("#p_reg").value||null,
     gvw:num($("#p_gvw").value),

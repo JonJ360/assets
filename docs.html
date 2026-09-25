@@ -32,7 +32,7 @@ ol,ul{padding-left:20px;margin:6px 0}li{margin:4px 0}
 </style>
 </head>
 <body>
-<header><span class="brand">ASSET <b>REGISTER</b> — DOCS</span><span class="ver">v1.41</span><a href="index.html">Open app →</a></header>
+<header><span class="brand">ASSET <b>REGISTER</b> — DOCS</span><span class="ver">v1.42</span><a href="index.html">Open app →</a></header>
 <main>
 
 <h2>What this is</h2>
@@ -138,6 +138,11 @@ alter table assets add column if not exists origin          text;</pre></div>
 <h2>Changed in v1.20</h2>
 <div class="card">
 Added the <strong>2027 Nordtek DO102X24-14K deck-over trailer</strong> from the Certificate of Origin: VIN 2NDKB2427VL001582, GVW 14,000 lb, purchased from James Kota Inc (Jamestown, invoice 262290), COO No. 00001950 in hand, not yet titled. Funding recorded as Trade-In; insured (matches the carrier list, whose VIN for it is a character short). Purchase price and the traded-in unit weren't on the scanned bill of sale — price blank, trade-in disposition pending. 86 vehicles total.
+</div>
+
+<h2>Changed in v1.42</h2>
+<div class="card">
+<strong>Title editing in the Fleet Compliance portal.</strong> Sign in as an existing editor (including <code>margi@360-llc.com</code>), select <strong>All fleet</strong> if the vehicle is outside the compliance programs, search its unit number, and open the vehicle. In <strong>Title</strong>, edit <strong>Title state</strong> and <strong>Title number</strong>, then choose <strong>Save changes</strong>. Title numbers remain text, including leading zeros and letters. View-only accounts see disabled fields and no Save button; the save handler also checks editor access. The portal's explicit save payload adds only <code>state</code> and <code>title_number</code> to its existing fields. No editor allowlist, RLS, schema, or audit changes; automatic refresh still pauses while the detail panel is open.
 </div>
 
 <h2>Changed in v1.39</h2>
@@ -516,6 +521,7 @@ Depreciation · file attachments (link out via <code>doc_url</code>) · maintena
 <table>
 <thead><tr><th>Ver</th><th>Changes</th></tr></thead>
 <tbody>
+<tr><td>1.42</td><td>Title state and title number are editable in the Fleet Compliance detail panel for existing editors, including Margi. Viewers remain read-only; Save checks editor access. No permission or database changes.</td></tr>
 <tr><td>1.41</td><td>Added a quiet five-minute refresh while the Asset Register or Fleet Compliance portal is open and visible. Refresh pauses while an edit panel is open.</td></tr>
 <tr><td>1.40</td><td>Granted Shayne W. full editor access in the Asset Register and Fleet Compliance portal.</td></tr>
 <tr><td>1.39</td><td>Restored the expired-session auth guard on both pages; replaced the unsafe anonymous-policy setup example; corrected session-storage and modified-date documentation; portal edits stamp updated_at; Modified table footer alignment fixed.</td></tr>

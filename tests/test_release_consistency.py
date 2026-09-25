@@ -10,10 +10,10 @@ def text(name):
 
 
 class ReleaseConsistencyTests(unittest.TestCase):
-    def test_visible_release_is_v141_on_all_pages(self):
-        self.assertIn('id="verTag">v1.41', text("index.html"))
-        self.assertIn('IRP · IFTA · 2290 &nbsp; v1.41', text("irp.html"))
-        self.assertIn('<span class="ver">v1.41</span>', text("docs.html"))
+    def test_visible_release_is_v142_on_all_pages(self):
+        self.assertIn('id="verTag">v1.42', text("index.html"))
+        self.assertIn('IRP · IFTA · 2290 &nbsp; v1.42', text("irp.html"))
+        self.assertIn('<span class="ver">v1.42</span>', text("docs.html"))
 
     def test_live_pages_refresh_every_five_minutes_without_stomping_edits(self):
         register = text("index.html")
