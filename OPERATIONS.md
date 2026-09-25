@@ -73,7 +73,7 @@ For changes to `index.html`, `docs.html`, or `irp.html`:
 - `status` defaults to `Active`.
 - Selling an asset should set `status = 'Sold'`, `sold_to`, `sale_date`, and `sale_price` when known.
 - Returning a sold asset to service should clear stale sale fields unless the user explicitly wants to retain them.
-- IRP portal edits are limited to compliance-related fields represented in `irp.html`, including title state (`state`) and `title_number`. Existing editors use the Title section and Save changes; viewers remain read-only. Keep title numbers as text, preserving leading zeros and letters. Do not test by mutating production assets.
+- IRP portal edits are limited to compliance-related fields represented in `irp.html`, including title state (`state`) and `title_number`. Existing editors use the Title section and Save details; viewers remain read-only. Keep title numbers as text, preserving leading zeros and letters. Do not test by mutating production assets.
 - The database trigger `trg_asset_history` must remain enabled so inserts, updates, and deletes are logged.
 - RLS editor identities are currently `jonj@360-llc.com`, `margi@360-llc.com`, and `shaynew@smionline.com`. Recheck live policies before any access change; exposing an existing permitted field does not require broader RLS.
 
