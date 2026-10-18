@@ -1,6 +1,6 @@
 # Asset Tracker Upload and Safe-Edit Design
 
-Status: proposal only; no production schema, Storage, RLS, or credentials have been changed.
+Status: historical broader proposal. The approved insurance-document subset is implemented in `supabase/asset_insurance_documents.sql` and `scripts/document_access.py`: private PDF storage, append-only metadata/audit, and a restricted DPAPI-backed machine identity. See `OPERATIONS.md` for the deployed contract. General asset editing by automation, other document types, replacement/archive/purge workflows below remain proposals.
 
 ## Decision
 

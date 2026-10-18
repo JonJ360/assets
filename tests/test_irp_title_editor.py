@@ -18,7 +18,7 @@ def portal():
         page.evaluate("""() => {
           hideLogin();
           window.calls = [];
-          sb = async (path, options) => { calls.push({path, ...options}); return null; };
+          sb = async (path, options) => { if(path.startsWith("asset_documents?")) return []; calls.push({path, ...options}); return null; };
           ROWS = [{id:'offline-fixture', name:'Offline test vehicle', status:'Active',
             state:'ND', title_number:'00123-A', plate:'TEST', updated_at:'2026-01-01T00:00:00Z'}];
         }""")

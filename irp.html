@@ -120,7 +120,7 @@ input[type=text],input[type=number],input[type=date],textarea{width:100%;padding
 <header>
   <a class="homebtn" href="index.html" title="Asset Register">&#8962;</a>
   <span class="brand">FLEET <b>COMPLIANCE</b></span>
-  <span class="ver">IRP · IFTA · 2290 &nbsp; v1.42</span>
+  <span class="ver">IRP · IFTA · 2290 &nbsp; v1.43</span>
   <span class="spacer"></span>
   <span class="synct" id="syncT"></span>
   <button class="syncbtn" id="syncBtn" title="Sync now">&#10227;</button>
@@ -160,7 +160,7 @@ input[type=text],input[type=number],input[type=date],textarea{width:100%;padding
 <div id="toast"></div>
 
 <script>
-/* Fleet Compliance Portal (Margi) — v1.42 (auth) (version tracks the Asset Register)
+/* Fleet Compliance Portal (Margi) — v1.43 (auth) (version tracks the Asset Register)
    Same Supabase table as the Asset Register. This page PATCHes ONLY:
    state, title_number, plate, reg_expires, gvw, unladen, axles,
    on_irp, on_ifta, on_2290, compliance_notes, updated_at */
@@ -192,8 +192,30 @@ const AUTH={
     this.save({email:(j.user&&j.user.email||this.s.email).toLowerCase(),access_token:j.access_token,refresh_token:j.refresh_token,exp:Date.now()+(j.expires_in-60)*1000});
     return true;
   },
-  async token(){ if(!this.s) return null; if(Date.now()>this.s.exp) await this.refresh(); return this.s?this.s.access_token:null; },
-  signOut(){ this.save(null); }
+  // Hub/AR use the Supabase SDK default same-origin session key.
+  async importShared(){
+    try{
+      const session=JSON.parse(localStorage.getItem("sb-inhwadbibwkakacdvoxu-auth-token")||"null");
+      if(!session || typeof session.access_token!=="string" || !session.access_token || typeof session.refresh_token!=="string" || !session.refresh_token || !Number.isFinite(session.expires_at) || session.expires_at*1000<=Date.now()+60000) return false;
+      const config=typeof BAKED_CONFIG!=="undefined" ? {url:BAKED_CONFIG.SUPABASE_URL,key:BAKED_CONFIG.SUPABASE_ANON_KEY} : {url:CFG.URL,key:CFG.KEY};
+      const response=await fetch(config.url+"/auth/v1/user",{method:"GET",headers:{apikey:config.key,Authorization:"Bearer "+session.access_token},cache:"no-store",redirect:"error"});
+      if(!response.ok) return false;
+      const user=await response.json();
+      if(!user.id || typeof user.email!=="string" || !user.email) return false;
+      // Never grant editor controls from the cached SDK user object.
+      this.save({email:user.email.toLowerCase(),access_token:session.access_token,refresh_token:session.refresh_token,exp:session.expires_at*1000-60000});
+      return true;
+    }catch(e){ return false; }
+  },
+  async token(){
+    if(!this.s || !this.s.access_token || !Number.isFinite(this.s.exp) || Date.now()>=this.s.exp){
+      if(await this.importShared()) return this.s.access_token;
+      if(!this.s) return null;
+      try{ if(!await this.refresh()) return null; }catch(e){ return null; }
+    }
+    return this.s?this.s.access_token:null;
+  },
+  signOut(){ this.save(null); localStorage.removeItem("sb-inhwadbibwkakacdvoxu-auth-token"); }
 };
 const canEdit=()=>AUTH.isEditor();
 const $=s=>document.querySelector(s);
@@ -309,6 +331,72 @@ function render(){
 }
 $("#q").addEventListener("input",e=>{Q=e.target.value;render();});
 
+/* Private insurance documents: keep this helper identical in both standalone pages. */
+function insuranceDateStatus(doc){
+  const now=new Date();
+  const today=new Date(now.getFullYear(),now.getMonth(),now.getDate());
+  const parse=value=>/^\d{4}-\d{2}-\d{2}$/.test(value||"") ? new Date(value+"T00:00:00") : null;
+  const expires=parse(doc.expiration_date), effective=parse(doc.effective_date);
+  if(expires && expires<today) return "Expired";
+  if(effective && effective>today) return "Not yet effective";
+  if(!expires || !Number.isFinite(expires.getTime())) return "Expiration not provided";
+  return (expires-today)/86400000<=30 ? "Expires within 30 days" : "Current dates";
+}
+async function retrieveInsuranceDocument(doc,download){
+  const parts=typeof doc.storage_path==="string" ? doc.storage_path.split("/") : [];
+  if(doc.storage_bucket!=="asset-documents" || doc.mime_type!=="application/pdf" || !parts.length || parts.some(p=>!p || p==="." || p===".." || p.includes("\\"))) throw new Error("Invalid document");
+  const token=await AUTH.token();
+  if(!token){ showLogin(); throw new Error("Sign in required"); }
+  const config=typeof BAKED_CONFIG!=="undefined" ? {url:BAKED_CONFIG.SUPABASE_URL,key:BAKED_CONFIG.SUPABASE_ANON_KEY} : {url:CFG.URL,key:CFG.KEY};
+  const response=await fetch(config.url+"/storage/v1/object/authenticated/asset-documents/"+parts.map(encodeURIComponent).join("/"),{
+    method:"GET",headers:{apikey:config.key,Authorization:"Bearer "+token},cache:"no-store",redirect:"error"
+  });
+  if(!response.ok) throw new Error("Document unavailable");
+  const blob=new Blob([await response.arrayBuffer()],{type:"application/pdf"});
+  const url=URL.createObjectURL(blob);
+  try{
+    const link=document.createElement("a"); link.href=url; link.rel="noopener noreferrer";
+    if(download) link.download=doc.original_name||"insurance-id-card.pdf";
+    else link.target="_blank";
+    document.body.append(link); link.click(); link.remove();
+  }finally{ setTimeout(()=>URL.revokeObjectURL(url),300000); }
+}
+
+async function loadAssetDocuments(assetId){
+  const host=document.querySelector("#assetDocuments");
+  if(!host) return;
+  try{
+    const rows=await sb("asset_documents?select=id,asset_id,document_type,storage_bucket,storage_path,original_name,mime_type,policy_number,effective_date,expiration_date,status&asset_id=eq."+encodeURIComponent(assetId)+"&document_type=eq.insurance&status=eq.active&order=created_at.desc");
+    if(!host.isConnected) return;
+    host.textContent="No insurance documents attached.";
+    const documents=(Array.isArray(rows)?rows:[]).filter(d=>d.asset_id===assetId && d.document_type==="insurance" && d.status==="active");
+    if(documents.length) host.textContent="";
+    for(const doc of documents){
+      const item=document.createElement("div");
+      item.style.cssText="padding:8px 0;overflow-wrap:anywhere";
+      const title=document.createElement("strong"); title.textContent="Insurance ID Card";
+      const name=document.createElement("div"); name.textContent=doc.original_name||"PDF document";
+      const details=document.createElement("div");
+      details.textContent="Policy: "+(doc.policy_number||"—")+" · Effective: "+(doc.effective_date||"—")+" · Expires: "+(doc.expiration_date||"—")+" · "+insuranceDateStatus(doc);
+      const message=document.createElement("div"); message.setAttribute("role","status");
+      item.append(title,name,details);
+      for(const action of ["Open","Download"]){
+        const button=document.createElement("button"); button.type="button"; button.className="btn ghost";
+        button.textContent=action; button.style.cssText="margin:6px 6px 0 0";
+        button.onclick=async()=>{
+          button.disabled=true; message.textContent="Retrieving document…";
+          try{ await retrieveInsuranceDocument(doc,action==="Download"); message.textContent=""; }
+          catch(e){ message.textContent="Unable to retrieve document. Sign in again or retry."; }
+          finally{ button.disabled=false; }
+        };
+        item.append(button);
+      }
+      item.append(message); host.append(item);
+    }
+
+  }catch(e){ if(host.isConnected) host.textContent="Insurance documents unavailable. Close and reopen to retry."; }
+}
+
 function open(id){
   SEL=ROWS.find(a=>a.id===id); if(!SEL) return;
   const a=SEL;
@@ -347,9 +435,11 @@ function open(id){
       <label class="f"><span>Axles</span><input type="number" id="p_axles" value="${a.axles??""}"></label>
     </div>
   </fieldset>
+  <fieldset class="fs"><legend>Insurance documents</legend><div id="assetDocuments" class="hint" aria-live="polite">Loading…</div></fieldset>
   <fieldset class="fs"><legend>Compliance notes (yours)</legend>
     <label class="f"><textarea id="p_notes" rows="3">${esc(a.compliance_notes||"")}</textarea></label>
   </fieldset>`;
+  loadAssetDocuments(id);
   if(!canEdit()){
     $("#shBody").querySelectorAll("input,textarea").forEach(el=>el.disabled=true);
     $("#shSave").style.display="none";
@@ -399,7 +489,7 @@ function paintWho(){
   else w.style.display="none";
 }
 AUTH.load();
-if(!AUTH.s){ showLogin(); } else { load(true); }
+(async()=>{ if(!await AUTH.token()){ showLogin(); } else { hideLogin(); await load(true); } paintWho(); })();
 paintWho();
 const _load=load;
 load=async function(q){ await _load(q); paintWho(); };

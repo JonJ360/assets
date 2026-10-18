@@ -81,6 +81,19 @@ For changes to `index.html`, `docs.html`, or `irp.html`:
 
 Run `python -m pytest tests -q`. Browser regression tests require `pytest`, `playwright`, and installed Microsoft Edge; they block all network requests and use synthetic fixtures only. They check the Margi/editor gate, disabled viewer fields, direct Save denial, the explicit payload, failed-save behavior, and text escaping. No live credentials or production writes are used.
 
+## Private insurance documents and automation access
+
+Private insurance PDFs now use `public.asset_documents`, append-only `public.asset_document_history`, and the private `asset-documents` Storage bucket. `supabase/asset_insurance_documents.sql` is the approved implementation; the older uploads proposal remains historical, not the deployed schema.
+
+- Human readers use existing app sign-in; Jon/Margi/Shayne retain document-insert rights. No public document URLs or delete/update grants are provided.
+- Dedicated `hermes-asset-documents@360-llc.com` / `asset_document_operator` is for document intake, not general asset editing. It reads only identifier/label/entity/status fields, inserts document metadata/objects, and reads document history. Ordinary runtime uses no admin key.
+- `python scripts/document_access.py health` checks durable access. `refresh-check` and `password-check` exercise token renewal and encrypted-credential recovery. Credentials remain Windows-DPAPI protected outside the repo at `%LOCALAPPDATA%/hermes/assets/document-access.dpapi`; never print or commit them. A local lock serializes token refresh across sessions.
+- `inventory --output <private path>` saves the current matching fields. Document intake requires unique exact VIN/serial matches; malformed modern VINs remain held, not corrected automatically.
+- `scripts/prepare_insurance_cards.py` and `scripts/upload_insurance_cards.py` bind the reviewed company-policy batch with explicit count guards. Source files remain unchanged. Every output has text/pixel equality checks; every remote document has metadata, SHA256 download and audit read-back checks. No upsert or silent overwrite.
+- A private Storage object may remain after metadata failure. Resume only the deterministic path and verify downloaded hash after successful metadata insertion; never broaden permissions to work around an unrelated denial.
+- The operator stamping function uses PostgREST-verified `request.jwt.claims`; managed auth-schema USAGE grants can fail silently, so catalog-read actual privileges rather than assuming grants landed.
+- DPAPI is tied to this Windows user. Revocation, machine/profile loss, network failure or project suspension are explicit recovery boundaries, not reasons to ask for Jon's PIN.
+
 ## Reporting
 
 Reports may be delivered as chat tables, CSV, Excel, PDF, or email drafts depending on the request. Load the matching document/spreadsheet/email skill before creating or sending those artifacts. Email sending follows the user's separate SEND authorization rules.
