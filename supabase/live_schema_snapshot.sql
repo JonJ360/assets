@@ -72,6 +72,12 @@ create index if not exists idx_hist_time on public.asset_history (changed_at des
 alter table public.assets enable row level security;
 alter table public.asset_history enable row level security;
 
+-- Explicit API privileges for recovery without automatic table grants.
+-- RLS below still restricts asset writes to the listed editors.
+-- History writes remain inside the security-definer audit trigger.
+grant select, insert, update, delete on public.assets to authenticated;
+grant select on public.asset_history to authenticated;
+
 create or replace function public.log_asset_change()
 returns trigger
 language plpgsql
